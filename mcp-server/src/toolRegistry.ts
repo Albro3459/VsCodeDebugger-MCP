@@ -19,6 +19,7 @@ export function registerTools() {
     // 注册 getDebuggerConfigurationsTool
     server.tool(
         DebugTools.getDebuggerConfigurationsTool.name,
+        DebugTools.getDebuggerConfigurationsTool.description,
         DebugTools.getDebuggerConfigurationsTool.inputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getDebuggerConfigurationsTool.name;
@@ -63,6 +64,7 @@ export function registerTools() {
     // 注册 setBreakpointTool
     server.tool(
         DebugTools.setBreakpointTool.name,
+        DebugTools.setBreakpointTool.description,
         DebugTools.setBreakpointTool.inputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = DebugTools.setBreakpointTool.name;
@@ -107,6 +109,7 @@ export function registerTools() {
     // 注册 getBreakpointsTool
     server.tool(
         DebugTools.getBreakpointsTool.name,
+        DebugTools.getBreakpointsTool.description,
         DebugTools.getBreakpointsTool.inputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getBreakpointsTool.name;
@@ -155,6 +158,7 @@ export function registerTools() {
     // 注册 removeBreakpointTool
     server.tool(
         DebugTools.removeBreakpointTool.name,
+        DebugTools.removeBreakpointTool.description,
         DebugTools.removeBreakpointTool.baseinputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = DebugTools.removeBreakpointTool.name;
@@ -190,6 +194,7 @@ export function registerTools() {
     // 注册 startDebuggingTool
     server.tool(
         DebugTools.startDebuggingTool.name,
+        DebugTools.startDebuggingTool.description,
         DebugTools.startDebuggingTool.inputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = DebugTools.startDebuggingTool.name;
@@ -235,6 +240,7 @@ export function registerTools() {
     // 注册 continueDebuggingTool
     server.tool(
         continueDebuggingTool.name,
+        continueDebuggingTool.description,
         continueDebuggingTool.inputSchema.shape,
         async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
             const toolName = continueDebuggingTool.name;
@@ -274,6 +280,7 @@ export function registerTools() {
     // 注册 stepExecutionTool
     server.tool(
         stepExecutionTool.name,
+        stepExecutionTool.description,
         stepExecutionTool.inputSchema.shape,
         async (args: StepExecutionParams, extra: RequestHandlerExtra) => { // 修正 extra 类型
             const toolName = stepExecutionTool.name;
@@ -313,6 +320,7 @@ export function registerTools() {
     // 注册 stopDebuggingTool
     server.tool(
         DebugTools.stopDebuggingTool.name,
+        DebugTools.stopDebuggingTool.description,
         DebugTools.stopDebuggingTool.inputSchema.shape,
         async (args: z.infer<typeof DebugTools.stopDebuggingTool.inputSchema>, extra: RequestHandlerExtra) => { // 修正 extra 类型
             const toolName = DebugTools.stopDebuggingTool.name;
