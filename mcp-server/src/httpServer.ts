@@ -18,6 +18,15 @@ function hasSessionHeader(req: Request): boolean {
     return typeof sessionId === 'string' && sessionId.trim().length > 0;
 }
 
+function getSessionHeader(req: Request): string | undefined {
+    const sessionId = req.get('mcp-session-id');
+    if (typeof sessionId !== 'string') {
+        return undefined;
+    }
+    const normalized = sessionId.trim();
+    return normalized.length > 0 ? normalized : undefined;
+}
+
 function isInitializeRequestPayload(payload: unknown): boolean {
     const messages = Array.isArray(payload) ? payload : [payload];
     return messages.some((message) => {
@@ -81,6 +90,15 @@ async function ensureStreamableHttpTransportConnected(): Promise<void> {
         });
 
         transport.onerror = (error) => {
+            const message = error instanceof Error ? error.message : String(error);
+            if (message.includes('Session not found')) {
+                logger.warn('[HTTP Server] Streamable HTTP stale session detected. Client should re-initialize without mcp-session-id.');
+                return;
+            }
+            if (message.includes('Server not initialized')) {
+                logger.warn('[HTTP Server] Streamable HTTP session is not initialized yet. Client should send initialize, then notifications/initialized, before other requests.');
+                return;
+            }
             logger.error('[HTTP Server] Streamable HTTP transport error:', error);
         };
 
@@ -138,13 +156,43 @@ export function startHttpServer(listenPort: number) {
 
     // Streamable HTTP 端点（Codex 等客户端）
     app.all("/mcp", async (req: Request, res: Response) => {
-        logger.info(`[HTTP Server] Streamable HTTP request received. Method: ${req.method}, Remote: ${req.ip}`);
+        const requestSessionId = getSessionHeader(req);
+        const activeSessionId = streamableHttpTransport?.sessionId;
+        logger.info(
+            `[HTTP Server] Streamable HTTP request received. Method=${req.method}, Remote=${req.ip}, RequestedSession=${requestSessionId ?? 'none'}, ActiveSession=${activeSessionId ?? 'none'}`
+        );
+
+        // Some clients probe /mcp with OPTIONS. Handle it directly to avoid noisy transport errors.
+        if (req.method === 'OPTIONS') {
+            res.setHeader('Allow', 'GET, POST, DELETE');
+            res.status(204).end();
+            return;
+        }
 
         if (isTransportModeConflict('streamable', req, res)) {
             return;
         }
 
         try {
+            if (requestSessionId && (!activeSessionId || requestSessionId !== activeSessionId)) {
+                if (req.method === 'DELETE') {
+                    logger.info(`[HTTP Server] Ignoring stale session DELETE. Requested=${requestSessionId}, active=${activeSessionId ?? 'none'}`);
+                    res.status(200).end();
+                    return;
+                }
+
+                logger.warn(`[HTTP Server] Streamable HTTP request used stale session ID. Requested=${requestSessionId}, active=${activeSessionId ?? 'none'}`);
+                res.status(404).json({
+                    jsonrpc: '2.0',
+                    error: {
+                        code: -32001,
+                        message: 'Session not found. Start a new session with initialize and no mcp-session-id header.'
+                    },
+                    id: null
+                });
+                return;
+            }
+
             const initializeRequest = isInitializeRequestPayload(req.body);
             if (initializeRequest && !hasSessionHeader(req) && streamableHttpTransport) {
                 await resetStreamableHttpSession('Received fresh initialize request without session header.');

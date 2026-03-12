@@ -22,3 +22,5 @@ url = "http://127.0.0.1:6009/mcp"
 - For Streamable HTTP follow-up requests, include `mcp-session-id`.
 - Set `Accept: application/json, text/event-stream`.
 - Only one transport mode can be active at a time (`/mcp` or SSE).
+- If you see `Server not initialized`, complete `initialize` + `notifications/initialized` before other requests.
+- If you get `-32001 Session not found`, clear cached `mcp-session-id`, then run `initialize` + `notifications/initialized` again.
