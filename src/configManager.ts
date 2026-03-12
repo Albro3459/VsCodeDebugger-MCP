@@ -1,49 +1,84 @@
 import * as vscode from 'vscode';
-import { DEFAULT_MCP_PORT, MCP_PORT_KEY, isValidPort } from './utils/portUtils';
-// 导入自动启动相关的常量
-import { AUTO_START_KEY, DEFAULT_AUTO_START } from './constants';
+import { DEFAULT_MCP_PORT, LEGACY_MCP_PORT_KEY, isValidPort } from './utils/portUtils';
+import {
+    CONFIG_KEY_AUTO_START,
+    CONFIG_KEY_MCP_PORT,
+    CONFIG_SECTION_SERVER,
+    DEFAULT_AUTO_START,
+    LEGACY_AUTO_START_KEY
+} from './constants';
 
-/**
- * 获取存储的MCP端口号，如果无效则返回默认端口。
- */
-export function getStoredPort(context: vscode.ExtensionContext): number {
-    const storedPort = context.globalState.get<number>(MCP_PORT_KEY);
-    if (storedPort !== undefined && isValidPort(storedPort)) {
-        return storedPort;
-    }
-    return DEFAULT_MCP_PORT;
+function getServerConfiguration(scope?: vscode.ConfigurationScope): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration(CONFIG_SECTION_SERVER, scope);
+}
+
+function hasExplicitValue<T>(inspection: {
+    globalValue?: T;
+    workspaceValue?: T;
+    workspaceFolderValue?: T;
+} | undefined): boolean {
+    return inspection?.globalValue !== undefined
+        || inspection?.workspaceValue !== undefined
+        || inspection?.workspaceFolderValue !== undefined;
+}
+
+function getPreferredConfigurationTarget(): vscode.ConfigurationTarget {
+    return vscode.workspace.workspaceFolders?.length ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
 }
 
 /**
- * 存储有效的MCP端口号。
+ * 获取配置的 MCP 端口号，如果没有显式设置则回退到旧版 globalState 存储值。
+ */
+export function getStoredPort(context: vscode.ExtensionContext): number {
+    const config = getServerConfiguration();
+    const configuredPort = config.get<number>(CONFIG_KEY_MCP_PORT, DEFAULT_MCP_PORT);
+
+    if (hasExplicitValue(config.inspect<number>(CONFIG_KEY_MCP_PORT))) {
+        return configuredPort;
+    }
+
+    const legacyPort = context.globalState.get<number>(LEGACY_MCP_PORT_KEY);
+    if (legacyPort !== undefined && isValidPort(legacyPort)) {
+        return legacyPort;
+    }
+
+    return configuredPort;
+}
+
+/**
+ * 存储有效的 MCP 端口号到 VS Code 设置中。
  */
 export async function storePort(context: vscode.ExtensionContext, port: number): Promise<void> {
     if (isValidPort(port)) {
-        await context.globalState.update(MCP_PORT_KEY, port);
+        await getServerConfiguration().update(CONFIG_KEY_MCP_PORT, port, getPreferredConfigurationTarget());
     } else {
         console.error(`Attempted to store invalid port number: ${port}`);
     }
 }
 
 /**
- * 获取存储的自动启动配置。
+ * 获取自动启动配置，如果没有显式设置则回退到旧版 globalState 存储值。
  */
 export function getAutoStartConfig(context: vscode.ExtensionContext): boolean {
-    // 明确指定类型为 boolean，并提供默认值
-    const storedValue = context.globalState.get<boolean>(AUTO_START_KEY);
-    // 如果存储的值是 undefined，则返回默认值
-    if (storedValue === undefined) {
-        return DEFAULT_AUTO_START;
+    const config = getServerConfiguration();
+    const configuredValue = config.get<boolean>(CONFIG_KEY_AUTO_START, DEFAULT_AUTO_START);
+
+    if (hasExplicitValue(config.inspect<boolean>(CONFIG_KEY_AUTO_START))) {
+        return configuredValue;
     }
-    // 确保返回的是布尔值
-    return !!storedValue;
+
+    const legacyValue = context.globalState.get<boolean>(LEGACY_AUTO_START_KEY);
+    if (legacyValue === undefined) {
+        return configuredValue;
+    }
+
+    return !!legacyValue;
 }
 
 /**
- * 存储自动启动配置。
+ * 存储自动启动配置到 VS Code 设置中。
  */
 export async function storeAutoStartConfig(context: vscode.ExtensionContext, autoStart: boolean): Promise<void> {
-    // 直接存储布尔值
-    await context.globalState.update(AUTO_START_KEY, autoStart);
+    await getServerConfiguration().update(CONFIG_KEY_AUTO_START, autoStart, getPreferredConfigurationTarget());
     console.log(`Auto-start config updated to: ${autoStart}`);
 }

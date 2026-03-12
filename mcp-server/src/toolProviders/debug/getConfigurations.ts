@@ -4,7 +4,10 @@ import { parse, ParseError, printParseErrorCode } from 'jsonc-parser';
 import { z } from 'zod';
 import * as Constants from '../../constants';
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // 定义 launch.json 配置项结构
 interface LaunchConfiguration {
@@ -43,7 +46,7 @@ export const getDebuggerConfigurationsTool = {
 
     async execute(
         args: z.infer<typeof GetDebuggerConfigurationsInputSchema>,
-        extra?: RequestHandlerExtra // 添加可选的 extra 参数
+        extra?: ToolRequestExtra // 添加可选的 extra 参数
     ): Promise<z.infer<typeof GetDebuggerConfigurationsOutputSchema>> {
         const toolName = this.name; // 获取工具名称以便日志记录
         // logger.debug(`[MCP Tool - ${toolName}] Received extra:`, extra); // 可选：记录接收到的 extra

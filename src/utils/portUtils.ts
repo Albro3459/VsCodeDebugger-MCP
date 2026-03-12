@@ -1,7 +1,7 @@
 import * as net from 'net';
 
 export const DEFAULT_MCP_PORT = 6009;
-export const MCP_PORT_KEY = 'mcpServerPort';
+export const LEGACY_MCP_PORT_KEY = 'mcpServerPort';
 
 export function isValidPort(port: number | string): boolean {
     const num = Number(port);

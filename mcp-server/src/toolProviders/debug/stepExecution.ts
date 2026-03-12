@@ -3,7 +3,10 @@ import { StepExecutionParams, StepExecutionResult } from '../../types';
 import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator';
 import * as Constants from '../../constants'; // Import all constants
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 const StepExecutionParamsSchema = z.object({
     session_id: z.string().optional().describe("The ID of the target debug session. If omitted, the currently active debug session will be attempted."),
@@ -26,7 +29,7 @@ export const stepExecutionTool = {
 
     async execute(
         params: StepExecutionParams,
-        extra?: RequestHandlerExtra // 修改参数为 extra
+        extra?: ToolRequestExtra // 修改参数为 extra
     ): Promise<z.infer<typeof AsyncDebugResultSchema>> {
         const toolName = this.name;
         logger.info(`[MCP Tool - ${toolName}] Executing with params:`, params); // 使用 logger

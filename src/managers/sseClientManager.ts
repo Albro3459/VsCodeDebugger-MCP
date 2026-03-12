@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import EventSource from 'eventsource'; // 导入 eventsource 库
+import { EventSource } from 'eventsource';
 // import { logger } from '../config'; // 移除 logger 导入
-import * as Constants from '../constants'; // 导入常量
 
 /**
  * 管理到 MCP 服务器的 SSE 客户端连接。
@@ -109,7 +108,7 @@ export class SseClientManager implements vscode.Disposable {
      * 关闭当前 SSE 连接。
      */
     private closeConnection(): void {
-         if (this.eventSource) {
+        if (this.eventSource) {
             this.outputChannel.appendLine(`[SSE Client] Closing connection to ${this.sseUrl}`);
             this.eventSource.close();
             this.eventSource = null;

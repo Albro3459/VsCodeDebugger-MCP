@@ -3,7 +3,10 @@ import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator';
 import { ContinueDebuggingParams, StartDebuggingResponsePayload } from '../../types';
 import * as Constants from '../../constants'; // Import Constants
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 const ContinueDebuggingParamsSchema = z.object({
     session_id: z.string().optional().describe("The ID of the target debug session. If omitted, the currently active debug session will be attempted."),
@@ -26,7 +29,7 @@ export const continueDebuggingTool = {
 
     async execute(
         params: ContinueDebuggingParams,
-        extra?: RequestHandlerExtra // 修改参数为 extra
+        extra?: ToolRequestExtra // 修改参数为 extra
     ): Promise<z.infer<typeof AsyncDebugResultSchema>> {
         const toolName = this.name;
         try {

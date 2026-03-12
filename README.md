@@ -18,16 +18,16 @@ This is a VS Code extension designed to enable AI agents to interact with VS Cod
 *   **⚙️ MCP Server Management**:
     *   **Status Bar Integration**: Displays the real-time running status of the MCP server in the VS Code status bar (e.g., "Debug-MCP: Running" or "Debug-MCP: Stopped").
     *   **Convenient Control**: Click the status bar item to quickly start or stop the MCP server.
-    *   **Port Configuration**: Automatically detects port occupancy. If the default port is occupied, allows the user to manually specify a new port number, which will be persistently saved.
-    *   **Auto Start**: Configurable option to automatically start the MCP server when VS Code launches.
+    *   **Port Configuration**: Automatically detects port occupancy. If the default port is occupied, allows the user to manually specify a new port number, which is saved to VS Code settings.
+    *   **Auto Start**: Configurable option to automatically start the MCP server when VS Code launches, saved to VS Code settings.
     *   **Client Configuration**: Provides a one-click copy function to easily copy the configuration information (such as URL, port) required to connect to this MCP server to AI clients (e.g., ClaudeDesktop, RooCode, Cline, Cursor, etc.).
 *   **📡 Communication Protocol**:
     *   The VS Code extension communicates with the local MCP server via subprocess and IPC.
-    *   The MCP server communicates with AI clients using **HTTP + Server-Sent Events (SSE)**, ensuring real-time and reliability.
+    *   The MCP server communicates with AI clients using **HTTP + Server-Sent Events (SSE)**.
 
 ## 🚀 Requirements
 
-*   **Visual Studio Code**: ^1.85.0 or higher.
+*   **Visual Studio Code**: ^1.109.0 or higher.
 *   **Node.js**: ^18.0.0 or higher (for running the MCP server).
 *   **How to Install Node.js**: Please visit the [Node.js official website](https://nodejs.org/) to download and install the version suitable for your operating system.
 *   **AI Client**: An AI agent client that supports the Model Context Protocol.
@@ -42,10 +42,21 @@ Before each use, check if RooCode is connected to the MCP server. ![connect_en](
 
 ## 🔧 Extension Settings
 
-This extension provides the following VS Code settings (`settings.json`):
+This extension contributes the following VS Code settings:
 
 *   `vscode-debugger-mcp.server.port` (number): The port number the MCP server listens on. Defaults to `6009`.
 *   `vscode-debugger-mcp.server.autoStart` (boolean): Whether to automatically start the MCP server when VS Code launches. Defaults to `true`.
+
+When you use the status bar menu to change the port or auto-start behavior, the extension updates workspace settings when a workspace is open, otherwise it updates your global user settings.
+
+Example:
+
+```json
+{
+  "vscode-debugger-mcp.server.port": 6009,
+  "vscode-debugger-mcp.server.autoStart": true
+}
+```
 
 ## 🐞 Known Issues / Potential Issues
 

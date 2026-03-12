@@ -24,8 +24,9 @@ export const OUTPUT_CHANNEL_NAME = 'VSCode Debugger MCP';
 export const OUTPUT_CHANNEL_COORDINATOR = 'Debug MCP Server (Coordinator)';
 
 // 配置键
-export const CONFIG_KEY_MCP_PORT = 'vscodeDebuggerMcp.mcpServer.port';
-export const CONFIG_KEY_AUTO_START = 'vscodeDebuggerMcp.autoStartServer';
+export const CONFIG_SECTION_SERVER = 'vscode-debugger-mcp.server';
+export const CONFIG_KEY_MCP_PORT = 'port';
+export const CONFIG_KEY_AUTO_START = 'autoStart';
 
 // 默认值
 export const DEFAULT_MCP_PORT = 8080;
@@ -50,4 +51,4 @@ export const MCP_CONFIG_URL_TEMPLATE = 'http://localhost:{port}/sse';
 // 服务器启动消息
 export const MCP_SERVER_LISTENING_MESSAGE_PREFIX = 'MCP Server listening on port ';
 // 自动启动配置键 (用于 Global State)
-export const AUTO_START_KEY = 'mcpServer.autoStart';
+export const LEGACY_AUTO_START_KEY = 'mcpServer.autoStart';

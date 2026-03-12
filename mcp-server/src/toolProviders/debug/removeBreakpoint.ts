@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator'; // Import PluginResponse type
 import * as Constants from '../../constants';
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // --- Input Schema Definitions (Keep as is) ---
 const LocationSchema = z.object({
@@ -48,7 +51,7 @@ export const removeBreakpointTool = {
 
     async execute(
         args: RemoveBreakpointInput, // Expect validated args based on inputSchema
-        extra?: RequestHandlerExtra // 修改参数为 extra
+        extra?: ToolRequestExtra // 修改参数为 extra
     ): Promise<z.infer<typeof RemoveBreakpointOutputSchema>> {
         const toolName = this.name;
         // Input validation is implicitly handled by the MCP server framework using inputSchema
