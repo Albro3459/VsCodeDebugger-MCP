@@ -1,12 +1,129 @@
 import express, { Request, Response } from "express";
 import http from 'http';
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from 'crypto';
 import { server } from './mcpInstance'; // 导入 MCP Server 实例
 import { logger, port } from './config'; // 导入 logger 和 port
 import * as Constants from './constants';
 
 let httpServer: http.Server | undefined;
 const transports: { [sessionId: string]: SSEServerTransport } = {};
+let streamableHttpTransport: StreamableHTTPServerTransport | undefined;
+let streamableHttpConnectPromise: Promise<void> | null = null;
+let activeTransportMode: 'none' | 'sse' | 'streamable' = 'none';
+
+function hasSessionHeader(req: Request): boolean {
+    const sessionId = req.get('mcp-session-id');
+    return typeof sessionId === 'string' && sessionId.trim().length > 0;
+}
+
+function isInitializeRequestPayload(payload: unknown): boolean {
+    const messages = Array.isArray(payload) ? payload : [payload];
+    return messages.some((message) => {
+        if (!message || typeof message !== 'object') {
+            return false;
+        }
+        const method = (message as { method?: unknown }).method;
+        return method === 'initialize';
+    });
+}
+
+function hasSseConnections(): boolean {
+    return Object.keys(transports).length > 0;
+}
+
+function setSseModeIfNeeded(): void {
+    if (hasSseConnections()) {
+        activeTransportMode = 'sse';
+    } else if (activeTransportMode === 'sse') {
+        activeTransportMode = 'none';
+    }
+}
+
+function isTransportModeConflict(expected: 'sse' | 'streamable', req: Request, res: Response): boolean {
+    if (activeTransportMode !== 'none' && activeTransportMode !== expected) {
+        const message = `Transport conflict: active mode is '${activeTransportMode}', but this endpoint requires '${expected}'.`;
+        logger.warn(`[HTTP Server] ${message} Remote: ${req.ip}, path: ${req.path}`);
+        res.status(409).json({
+            jsonrpc: '2.0',
+            error: {
+                code: -32000,
+                message
+            },
+            id: null
+        });
+        return true;
+    }
+    return false;
+}
+
+async function ensureStreamableHttpTransportConnected(): Promise<void> {
+    if (streamableHttpTransport) {
+        return;
+    }
+    if (streamableHttpConnectPromise) {
+        return streamableHttpConnectPromise;
+    }
+
+    streamableHttpConnectPromise = (async () => {
+        const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessionclosed: async (sessionId) => {
+                logger.info(`[HTTP Server] Streamable HTTP session closed: ${sessionId}`);
+                if (streamableHttpTransport === transport) {
+                    streamableHttpTransport = undefined;
+                    if (activeTransportMode === 'streamable') {
+                        activeTransportMode = 'none';
+                    }
+                }
+            }
+        });
+
+        transport.onerror = (error) => {
+            logger.error('[HTTP Server] Streamable HTTP transport error:', error);
+        };
+
+        transport.onclose = () => {
+            logger.info('[HTTP Server] Streamable HTTP transport closed.');
+            if (streamableHttpTransport === transport) {
+                streamableHttpTransport = undefined;
+                if (activeTransportMode === 'streamable') {
+                    activeTransportMode = 'none';
+                }
+            }
+        };
+
+        await server.connect(transport);
+        streamableHttpTransport = transport;
+        activeTransportMode = 'streamable';
+        logger.info('[HTTP Server] McpServer connected to Streamable HTTP transport.');
+    })().finally(() => {
+        streamableHttpConnectPromise = null;
+    });
+
+    return streamableHttpConnectPromise;
+}
+
+async function resetStreamableHttpSession(reason: string): Promise<void> {
+    if (!streamableHttpTransport) {
+        return;
+    }
+
+    logger.info(`[HTTP Server] Resetting Streamable HTTP session. Reason: ${reason}`);
+
+    try {
+        await server.close();
+    } catch (error) {
+        logger.warn('[HTTP Server] Failed to close MCP server during Streamable HTTP reset:', error);
+    } finally {
+        streamableHttpTransport = undefined;
+        streamableHttpConnectPromise = null;
+        if (activeTransportMode === 'streamable') {
+            activeTransportMode = 'none';
+        }
+    }
+}
 
 /**
  * 启动 MCP Server 的 HTTP/SSE 接口。
@@ -17,9 +134,52 @@ export function startHttpServer(listenPort: number) {
 
     const app = express();
 
+    app.use("/mcp", express.json({ limit: '2mb' }));
+
+    // Streamable HTTP 端点（Codex 等客户端）
+    app.all("/mcp", async (req: Request, res: Response) => {
+        logger.info(`[HTTP Server] Streamable HTTP request received. Method: ${req.method}, Remote: ${req.ip}`);
+
+        if (isTransportModeConflict('streamable', req, res)) {
+            return;
+        }
+
+        try {
+            const initializeRequest = isInitializeRequestPayload(req.body);
+            if (initializeRequest && !hasSessionHeader(req) && streamableHttpTransport) {
+                await resetStreamableHttpSession('Received fresh initialize request without session header.');
+            }
+
+            await ensureStreamableHttpTransportConnected();
+            if (!streamableHttpTransport) {
+                throw new Error('Streamable HTTP transport is unavailable after connection.');
+            }
+            await streamableHttpTransport.handleRequest(req, res, req.body);
+        } catch (error) {
+            logger.error('[HTTP Server] Failed to handle /mcp request:', error);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    jsonrpc: '2.0',
+                    error: {
+                        code: -32603,
+                        message: `Failed to handle /mcp request: ${error instanceof Error ? error.message : String(error)}`
+                    },
+                    id: null
+                });
+            } else if (!res.writableEnded) {
+                res.end();
+            }
+        }
+    });
+
     // SSE 连接端点
     app.get("/sse", async (req: Request, res: Response) => {
         logger.info(`[HTTP Server] SSE connection request received from ${req.ip}`);
+
+        if (isTransportModeConflict('sse', req, res)) {
+            return;
+        }
+
         const transport = new SSEServerTransport('/messages', res);
         transports[transport.sessionId] = transport;
         logger.info(`[HTTP Server] SSE transport created with sessionId: ${transport.sessionId}`);
@@ -31,6 +191,7 @@ export function startHttpServer(listenPort: number) {
             delete transports[transport.sessionId];
             // 确认 transport 已移除
             logger.info(`[HTTP Server] Transport removed for closed sessionId: ${transport.sessionId}`);
+            setSseModeIfNeeded();
         });
 
         // 添加 error 事件监听器
@@ -39,18 +200,21 @@ export function startHttpServer(listenPort: number) {
             // 考虑是否也需要在这里清理 transport
             delete transports[transport.sessionId];
             logger.info(`[HTTP Server] Transport removed due to error for sessionId: ${transport.sessionId}`);
+            setSseModeIfNeeded();
         });
 
         // 将 transport 连接到 McpServer
         try {
             await server.connect(transport);
             logger.info(`[HTTP Server] McpServer connected to SSE transport for sessionId: ${transport.sessionId}`);
+            activeTransportMode = 'sse';
         } catch (connectError) {
             logger.error(`[HTTP Server] Failed to connect McpServer to SSE transport for sessionId: ${transport.sessionId}`, connectError);
             if (!res.writableEnded) {
                 res.end();
             }
             delete transports[transport.sessionId];
+            setSseModeIfNeeded();
         }
     });
 
