@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator';
 import * as Constants from '../../constants';
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // Input Schema (Keep as is)
 export const stopDebuggingSchema = z.object({
@@ -27,7 +30,7 @@ export const stopDebuggingTool = {
 
     async execute(
         args: StopDebuggingArgs,
-        extra?: RequestHandlerExtra // 修改参数为 extra
+        extra?: ToolRequestExtra // 修改参数为 extra
     ): Promise<z.infer<typeof StopDebuggingOutputSchema>> {
         const toolName = this.name;
         logger.info(`[MCP Tool - ${toolName}] Executing with args:`, args); // 使用 logger

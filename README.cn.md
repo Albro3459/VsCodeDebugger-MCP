@@ -18,16 +18,16 @@
 *   **⚙️ MCP 服务器管理**:
     *   **状态栏集成**: 在 VS Code 状态栏实时显示 MCP 服务器的运行状态（例如 "Debug-MCP: Running" 或 "Debug-MCP: Stopped"）。
     *   **便捷控制**: 点击状态栏项可快速启动或停止 MCP 服务器。
-    *   **端口配置**: 自动检测端口占用。如果默认端口被占用，允许用户手动指定一个新的端口号，该设置会持久化保存。
-    *   **自动启动**: 可配置是否在 VS Code 启动时自动启动 MCP 服务器。
+    *   **端口配置**: 自动检测端口占用。如果默认端口被占用，允许用户手动指定一个新的端口号，并保存到 VS Code 设置中。
+    *   **自动启动**: 可配置是否在 VS Code 启动时自动启动 MCP 服务器，并保存到 VS Code 设置中。
     *   **客户端配置**: 提供一键复制功能，方便将连接此 MCP 服务器所需的配置信息（如 URL、端口）复制到 AI 客户端（如 ClaudeDesktop, RooCode, Cline, Cursor 等）。
 *   **📡 通信协议**:
     *   VS Code 扩展与本地 MCP 服务器之间通过子进程和 IPC 通信。
-    *   MCP 服务器与 AI 客户端之间使用 **HTTP + Server-Sent Events (SSE)** 进行通信，确保实时性和可靠性。
+    *   MCP 服务器与 AI 客户端之间使用 **HTTP + Server-Sent Events (SSE)** 进行通信。
 
 ## 🚀 要求
 
-*   **Visual Studio Code**: ^1.85.0 或更高版本。
+*   **Visual Studio Code**: ^1.109.0 或更高版本。
 *   **Node.js**: ^18.0.0 或更高版本 (用于运行 MCP 服务器)。
 *   **如何安装 Node.js**: 请访问 [Node.js 官方网站](https://nodejs.org/) 下载并安装适合您操作系统的版本。
 *   **AI客户端** 支持 Model Context Protocol 的 AI 代理客户端。
@@ -41,10 +41,21 @@
 
 ## 🔧 扩展设置
 
-本扩展提供以下 VS Code 设置项 (`settings.json`):
+本扩展提供以下 VS Code 设置项:
 
 *   `vscode-debugger-mcp.server.port` (number): MCP 服务器监听的端口号。默认为 `6009`。
 *   `vscode-debugger-mcp.server.autoStart` (boolean): 是否在 VS Code 启动时自动启动 MCP 服务器。默认为 `true`。
+
+当你通过状态栏菜单修改端口或自动启动选项时，如果当前打开了工作区，扩展会优先写入工作区设置；否则会写入全局用户设置。
+
+示例:
+
+```json
+{
+  "vscode-debugger-mcp.server.port": 6009,
+  "vscode-debugger-mcp.server.autoStart": true
+}
+```
 
 ## 🐞 已知问题/潜在问题
 

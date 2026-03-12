@@ -1,7 +1,7 @@
 {
   "name": "debug-mcp-server",
   "version": "1.1.0",
-  "description": "MCP Server (stdio-only) for VsCode Debugger",
+  "description": "HTTP/SSE MCP server for VS Code debugger integration",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -15,22 +15,22 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.3",
     "@types/pino": "^7.0.4",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
-    "eslint": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "eslint": "^10.0.3",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.8",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@types/express": "^5.0.1",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "jsonc-parser": "^3.3.1",
-    "pino": "^9.6.0",
+    "pino": "^10.3.1",
     "uuid": "^11.1.0"
   }
 }

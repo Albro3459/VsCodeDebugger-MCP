@@ -1,5 +1,6 @@
 import { logger, port } from './config'; // 导入配置
 import { registerTools } from './toolRegistry'; // 导入工具注册函数
+import { registerResources } from './resourceRegistry';
 import { startHttpServer } from './httpServer'; // 导入 HTTP 服务器启动函数
 import { registerProcessHandlers } from './processHandlers'; // 导入进程处理注册函数
 
@@ -17,7 +18,10 @@ async function main() {
     // 注意：McpServer 实例在 mcpInstance.ts 中创建，并在 toolRegistry 中导入和使用
     registerTools();
 
-    // 3. 启动 HTTP/SSE 服务器接口
+    // 3. 注册 MCP 资源与模板
+    registerResources();
+
+    // 4. 启动 HTTP/SSE 服务器接口
     startHttpServer(port);
 
     // McpServer 实例本身不需要在这里显式启动或连接，

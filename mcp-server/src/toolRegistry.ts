@@ -6,7 +6,10 @@ import { continueDebuggingTool } from './toolProviders/debug/continueDebugging';
 import { stepExecutionTool } from './toolProviders/debug/stepExecution';
 import * as Constants from './constants';
 import { StepExecutionParams } from './types';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 /**
  * 注册所有 MCP 调试工具及其适配器逻辑。
@@ -21,7 +24,7 @@ export function registerTools() {
         DebugTools.getDebuggerConfigurationsTool.name,
         DebugTools.getDebuggerConfigurationsTool.description,
         DebugTools.getDebuggerConfigurationsTool.inputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getDebuggerConfigurationsTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName}`);
             try {
@@ -66,7 +69,7 @@ export function registerTools() {
         DebugTools.setBreakpointTool.name,
         DebugTools.setBreakpointTool.description,
         DebugTools.setBreakpointTool.inputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.setBreakpointTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
             try {
@@ -111,7 +114,7 @@ export function registerTools() {
         DebugTools.getBreakpointsTool.name,
         DebugTools.getBreakpointsTool.description,
         DebugTools.getBreakpointsTool.inputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getBreakpointsTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName}`);
             try {
@@ -160,7 +163,7 @@ export function registerTools() {
         DebugTools.removeBreakpointTool.name,
         DebugTools.removeBreakpointTool.description,
         DebugTools.removeBreakpointTool.baseinputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.removeBreakpointTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with validated args:`, args);
             try {
@@ -196,7 +199,7 @@ export function registerTools() {
         DebugTools.startDebuggingTool.name,
         DebugTools.startDebuggingTool.description,
         DebugTools.startDebuggingTool.inputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.startDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
             try {
@@ -242,7 +245,7 @@ export function registerTools() {
         continueDebuggingTool.name,
         continueDebuggingTool.description,
         continueDebuggingTool.inputSchema.shape,
-        async (args, extra: RequestHandlerExtra) => { // 添加 extra 类型
+        async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = continueDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
             try {
@@ -282,7 +285,7 @@ export function registerTools() {
         stepExecutionTool.name,
         stepExecutionTool.description,
         stepExecutionTool.inputSchema.shape,
-        async (args: StepExecutionParams, extra: RequestHandlerExtra) => { // 修正 extra 类型
+        async (args: StepExecutionParams, extra: ToolRequestExtra) => { // 修正 extra 类型
             const toolName = stepExecutionTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
             try {
@@ -322,7 +325,7 @@ export function registerTools() {
         DebugTools.stopDebuggingTool.name,
         DebugTools.stopDebuggingTool.description,
         DebugTools.stopDebuggingTool.inputSchema.shape,
-        async (args: z.infer<typeof DebugTools.stopDebuggingTool.inputSchema>, extra: RequestHandlerExtra) => { // 修正 extra 类型
+        async (args: z.infer<typeof DebugTools.stopDebuggingTool.inputSchema>, extra: ToolRequestExtra) => { // 修正 extra 类型
             const toolName = DebugTools.stopDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
             try {

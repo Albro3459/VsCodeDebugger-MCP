@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator';
 import * as Constants from '../../constants';
 import { logger } from '../../config'; // 导入 logger
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'; // 导入 RequestHandlerExtra
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+
+type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // 输入 Schema (保持不变)
 export const getBreakpointsSchema = z.object({}).describe("Retrieves all currently set breakpoints, requires no parameters.");
@@ -44,7 +47,7 @@ export const getBreakpointsTool = {
 
     async execute(
         args: GetBreakpointsArgs,
-        extra?: RequestHandlerExtra // 修改参数为 extra
+        extra?: ToolRequestExtra // 修改参数为 extra
     ): Promise<z.infer<typeof GetBreakpointsOutputSchema>> {
         const toolName = this.name;
         logger.info(`[MCP Tool - ${toolName}] Executing...`); // 使用 logger
