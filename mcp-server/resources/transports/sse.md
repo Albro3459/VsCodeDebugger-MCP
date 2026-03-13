@@ -2,6 +2,8 @@
 
 Use when your MCP client cannot use Streamable HTTP directly.
 
+Do not use `localhost`; use `127.0.0.1`.
+
 ## Endpoints
 
 - `GET http://127.0.0.1:6009/sse`
@@ -11,3 +13,5 @@ Use when your MCP client cannot use Streamable HTTP directly.
 
 - Keep the SSE stream open while sending POST requests.
 - If SSE closes, open `/sse` again and use the new `sessionId`.
+- Start the MCP server before starting your agent.
+- First request locks transport mode until restart (architectural limitation).

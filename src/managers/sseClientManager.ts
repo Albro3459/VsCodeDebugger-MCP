@@ -28,7 +28,7 @@ export class SseClientManager implements vscode.Disposable {
             return;
         }
 
-        this.sseUrl = `http://localhost:${port}/sse`;
+        this.sseUrl = `http://127.0.0.1:${port}/sse`;
         this.outputChannel.appendLine(`[SSE Client] Attempting to connect to ${this.sseUrl}...`);
         this.isConnecting = true;
         this.clearReconnectTimer(); // 清除之前的重连计时器
