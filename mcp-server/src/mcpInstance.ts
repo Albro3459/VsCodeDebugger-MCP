@@ -4,7 +4,7 @@ import packageJson from '../package.json';
 
 // 创建并导出 McpServer 实例
 export const server = new McpServer({
-  name: 'mcp-debugger',
+  name: 'mcp-vscode-debugger',
   version: packageJson.version
 });
 

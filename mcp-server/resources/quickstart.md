@@ -5,7 +5,7 @@ Default endpoint: `http://127.0.0.1:6009/mcp` (Streamable HTTP).
 ## Client config
 
 ```toml
-[mcp_servers.mcp-debugger]
+[mcp_servers.mcp-vscode-debugger]
 url = "http://127.0.0.1:6009/mcp"
 ```
 
