@@ -1,7 +1,7 @@
 // mcp-server/src/constants.ts
 // MCP Server 常量定义，包含 IPC 命令、消息类型和工具名称
 
-export const IPC_COMMAND_PREFIX = 'vscode-debugger-mcp:';
+export const IPC_COMMAND_PREFIX = 'mcp-debugger:';
 
 // IPC Commands (MCP Server 需要处理的请求/响应对)
 export const IPC_COMMAND_GET_CONFIGURATIONS = `${IPC_COMMAND_PREFIX}getConfigurations`;

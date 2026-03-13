@@ -17,7 +17,7 @@ let outputChannel: vscode.OutputChannel;
 
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Congratulations, your extension "vscode-debugger-mcp" is now active!');
+	console.log('Congratulations, your extension "mcp-debugger" is now active!');
 
 	// 创建 OutputChannel
 	// 注意：IpcHandler 和 ProcessManager 内部也会创建自己的 OutputChannel
@@ -184,5 +184,5 @@ async function showServerActionMenu(context: vscode.ExtensionContext, manager: S
 
 export function deactivate() {
 	// 清理工作由 VS Code 通过 context.subscriptions 自动处理
-	console.log('Deactivating vscode-debugger-mcp extension...');
+	console.log('Deactivating mcp-debugger extension...');
 }

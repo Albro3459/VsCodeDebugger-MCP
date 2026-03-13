@@ -1,7 +1,7 @@
 # VSCode Debugger MCP
 
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.vscode-debugger-mcp)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.mcp-debugger?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.mcp-debugger)
 
 ![demo_cn](assets/demo_cn.gif)
 
@@ -52,7 +52,7 @@
 启动 Agent 之前，MCP 服务器必须已经在运行。
 
 ```toml
-[mcp_servers.vscode-debugger-mcp]
+[mcp_servers.mcp-debugger]
 url = "http://127.0.0.1:6009/mcp"
 ```
 
@@ -62,8 +62,8 @@ url = "http://127.0.0.1:6009/mcp"
 
 本扩展提供以下 VS Code 设置项:
 
-*   `vscode-debugger-mcp.server.port` (number): MCP 服务器监听的端口号。默认为 `6009`。
-*   `vscode-debugger-mcp.server.autoStart` (boolean): 是否在 VS Code 启动时自动启动 MCP 服务器。默认为 `true`。
+*   `mcp-debugger.server.port` (number): MCP 服务器监听的端口号。默认为 `6009`。
+*   `mcp-debugger.server.autoStart` (boolean): 是否在 VS Code 启动时自动启动 MCP 服务器。默认为 `true`。
 
 当你通过状态栏菜单修改端口或自动启动选项时，如果当前打开了工作区，扩展会优先写入工作区设置；否则会写入全局用户设置。
 
@@ -71,8 +71,8 @@ url = "http://127.0.0.1:6009/mcp"
 
 ```json
 {
-  "vscode-debugger-mcp.server.port": 6009,
-  "vscode-debugger-mcp.server.autoStart": true
+  "mcp-debugger.server.port": 6009,
+  "mcp-debugger.server.autoStart": true
 }
 ```
 
