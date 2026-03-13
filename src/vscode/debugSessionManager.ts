@@ -186,6 +186,46 @@ export class DebugSessionManager {
         });
     }
 
+    public async startDebugging(configurationName: string, noDebug: boolean): Promise<StartDebuggingResponsePayload> {
+        const requestId = `start-${this.requestCounter++}`;
+        console.log(`[DSM][${requestId}] Attempting non-blocking start. Config: ${configurationName}, NoDebug: ${noDebug}`);
+
+        const folder = vscode.workspace.workspaceFolders?.[0];
+        if (!folder) {
+            console.error(`[DSM][${requestId}] Error: No workspace folder found.`);
+            return { status: IPC_STATUS_ERROR, message: '无法确定工作区文件夹。' };
+        }
+
+        const launchConfig = vscode.workspace.getConfiguration('launch', folder.uri);
+        const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations') || [];
+        const compounds = launchConfig.get<Array<{ name: string; configurations?: string[] }>>('compounds') || [];
+        const targetConfig = configurations.find(conf => conf.name === configurationName);
+        const targetCompound = compounds.find(compound => compound.name === configurationName);
+
+        if (!targetConfig && !targetCompound) {
+            console.error(`[DSM][${requestId}] Debug configuration or compound '${configurationName}' not found.`);
+            return { status: IPC_STATUS_ERROR, message: `找不到名为 '${configurationName}' 的调试配置或复合配置。` };
+        }
+
+        try {
+            const success = await vscode.debug.startDebugging(folder, configurationName, { noDebug });
+            if (!success) {
+                return { status: IPC_STATUS_ERROR, message: 'VS Code 报告无法启动调试会话 (startDebugging 返回 false)。' };
+            }
+
+            const activeSessionId = vscode.debug.activeDebugSession?.id;
+            const response: StartDebuggingResponsePayload = {
+                status: 'running',
+                message: '调试会话已启动并立即返回。对于 watch 或长期运行服务，请通过应用健康检查验证状态，而不是持续等待调试停止事件。',
+                ...(activeSessionId ? { session_id: activeSessionId } : {})
+            };
+            return response;
+        } catch (error: any) {
+            console.error(`[DSM][${requestId}] Error calling vscode.debug.startDebugging (non-blocking):`, error);
+            return { status: IPC_STATUS_ERROR, message: `启动调试时出错: ${error.message}` };
+        }
+    }
+
     public async startDebuggingAndWait(configurationName: string, noDebug: boolean): Promise<StartDebuggingResponsePayload> {
         const requestId = `start-${this.requestCounter++}`;
         console.log(`[DSM][${requestId}] Attempting to start debug session. Config: ${configurationName}, NoDebug: ${noDebug}`);
@@ -200,30 +240,19 @@ export class DebugSessionManager {
 
             const launchConfig = vscode.workspace.getConfiguration('launch', folder.uri);
             const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations') || [];
-            let targetConfig = configurations.find(conf => conf.name === configurationName);
+            const compounds = launchConfig.get<Array<{ name: string; configurations?: string[] }>>('compounds') || [];
+            const targetConfig = configurations.find(conf => conf.name === configurationName);
+            const targetCompound = compounds.find(compound => compound.name === configurationName);
 
-            if (!targetConfig) {
-                console.error(`[DSM][${requestId}] Debug configuration '${configurationName}' not found.`);
-                resolve({ status: IPC_STATUS_ERROR, message: `找不到名为 '${configurationName}' 的调试配置。` });
+            if (!targetConfig && !targetCompound) {
+                console.error(`[DSM][${requestId}] Debug configuration or compound '${configurationName}' not found.`);
+                resolve({ status: IPC_STATUS_ERROR, message: `找不到名为 '${configurationName}' 的调试配置或复合配置。` });
                 return;
             }
-            if (noDebug) {
-                targetConfig = { ...targetConfig, noDebug: true };
-            }
-            console.log(`[DSM][${requestId}] Resolved targetConfig:`, JSON.stringify(targetConfig));
+            console.log(`[DSM][${requestId}] Resolved target:`, JSON.stringify(targetConfig || targetCompound));
 
-            const isExtensionHost = targetConfig.type === 'extensionHost' || targetConfig.type === 'pwa-extensionHost';
+            const isExtensionHost = !!targetConfig && (targetConfig.type === 'extensionHost' || targetConfig.type === 'pwa-extensionHost');
             console.log(`[DSM][${requestId}] Is extensionHost debug: ${isExtensionHost}`);
-
-            if (typeof targetConfig.program === 'string' && targetConfig.program.includes('${file}')) {
-                const activeEditor = vscode.window.activeTextEditor;
-                if (activeEditor) {
-                    targetConfig.program = targetConfig.program.replace('${file}', activeEditor.document.uri.fsPath);
-                } else {
-                    this.resolveRequestInternal(requestId, { status: IPC_STATUS_ERROR, message: `无法解析 \${file}，无活动编辑器。` });
-                    return;
-                }
-            }
 
             const timeout = isExtensionHost ? 120000 : 60000; // TODO: Make configurable
             console.log(`[DSM][${requestId}] Setting timeout to ${timeout}ms.`);
@@ -257,7 +286,7 @@ export class DebugSessionManager {
 
             try {
                 console.log(`[DSM][${requestId}] Calling vscode.debug.startDebugging...`);
-                const success = await vscode.debug.startDebugging(folder, targetConfig);
+                const success = await vscode.debug.startDebugging(folder, configurationName, { noDebug });
                 console.log(`[DSM][${requestId}] vscode.debug.startDebugging returned: ${success}`);
                 if (!success && !pendingRequest.isResolved) {
                     this.resolveRequestInternal(requestId, { status: IPC_STATUS_ERROR, message: 'VS Code 报告无法启动调试会话 (startDebugging 返回 false)。' });

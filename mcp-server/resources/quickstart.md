@@ -22,6 +22,9 @@ Do not use `localhost`; use `127.0.0.1`.
 
 ## Notes
 
+- `start_debugging` returns immediately with `status: "running"` by default.
+- Use `stay_connected: true` only when you explicitly need to wait for a debug stop/termination event.
+- For watch configs or long-running servers, prefer checking service readiness (health/ping) instead of staying connected.
 - For Streamable HTTP follow-up requests, include `mcp-session-id`.
 - Set `Accept: application/json, text/event-stream`.
 - Only one transport mode can be active at a time (`/mcp` or SSE).

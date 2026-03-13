@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.2.2
+
+* Updated `start_debugging` to return immediately by default after launch (non-blocking), so long-running/watch/server configs do not leave agent calls stuck.
+* Added optional `stay_connected` mode for `start_debugging` when callers explicitly want to wait for stop/termination behavior.
+* Added compound debug configuration support:
+    * `get_debugger_configurations` now includes `launch.compounds`.
+    * `start_debugging` can now start compound entries by name (for example, `Client & Server`).
+
 ## 1.2.1
 
 * Updated README usage documentation for Claude, Codex, and RooCode MCP setup.

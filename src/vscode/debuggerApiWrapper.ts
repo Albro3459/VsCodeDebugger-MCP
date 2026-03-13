@@ -56,14 +56,18 @@ export class DebuggerApiWrapper {
     }
 
     /**
-     * Starts a debugging session and waits for it to stop or complete,
-     * delegating to the DebugSessionManager.
+     * Starts a debugging session.
+     * By default this returns immediately with "running".
+     * If stayConnected is true, waits until first stop/finish/timeout.
      * @param configurationName The name of the debug configuration to launch.
      * @param noDebug Whether to start without debugging.
-     * @returns Promise resolving to the session result (stopped, completed, error, timeout).
+     * @param stayConnected Whether to keep the request open waiting for debug events.
      */
-    public async startDebuggingAndWait(configurationName: string, noDebug: boolean): Promise<StartDebuggingResponsePayload> {
-        return this.debugSessionManager.startDebuggingAndWait(configurationName, noDebug);
+    public async startDebugging(configurationName: string, noDebug: boolean, stayConnected: boolean = false): Promise<StartDebuggingResponsePayload> {
+        if (stayConnected) {
+            return this.debugSessionManager.startDebuggingAndWait(configurationName, noDebug);
+        }
+        return this.debugSessionManager.startDebugging(configurationName, noDebug);
     }
 
     /**
@@ -99,11 +103,10 @@ export class DebuggerApiWrapper {
     }
 
     /**
-     * Retrieves available debugger configurations directly from VS Code workspace settings.
-     * This method remains in the Facade as it deals directly with workspace configuration.
-     * @returns An array of available debug configurations or an empty array if none are found or an error occurs.
+     * Retrieves available debugger configurations and compounds from VS Code workspace settings.
+     * @returns An array of launch entries or an empty array if none are found or an error occurs.
      */
-    public getDebuggerConfigurations(): vscode.DebugConfiguration[] {
+    public getDebuggerConfigurations(): any[] {
         try {
             const workspaceFolders = vscode.workspace.workspaceFolders;
             if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -113,13 +116,19 @@ export class DebuggerApiWrapper {
             // Assuming the first workspace folder is the relevant one for launch configurations
             const folder = workspaceFolders[0];
             const launchConfig = vscode.workspace.getConfiguration('launch', folder.uri);
-            const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations');
+            const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations') || [];
+            const compounds = launchConfig.get<Array<{ name: string; configurations?: string[] }>>('compounds') || [];
 
-            if (!configurations) {
-                console.warn("[DebuggerApiWrapper] 'launch.configurations' not found or is not an array.");
-                return [];
-            }
-            return configurations;
+            const mappedConfigurations = configurations.map(config => ({ ...config, kind: 'configuration' }));
+            const mappedCompounds = compounds.map(compound => ({
+                name: compound.name,
+                type: 'compound',
+                request: 'launch',
+                kind: 'compound',
+                configurations: compound.configurations || [],
+            }));
+
+            return [...mappedConfigurations, ...mappedCompounds];
         } catch (error: any) {
             console.error("[DebuggerApiWrapper] Error retrieving debugger configurations:", error);
             return [];
@@ -144,4 +153,3 @@ export class DebuggerApiWrapper {
         }
     }
 }
-

@@ -28,6 +28,9 @@ POST JSON-RPC to `http://127.0.0.1:6009/messages?sessionId=...`:
 
 - `tools/list` and `tools/call`
 - `resources/list`, `resources/templates/list`, `resources/read`
+- `start_debugging` returns immediately by default (`status: "running"`).
+- Set `stay_connected: true` only when you intentionally want to wait for stop/termination events.
+- For watch or long-running server configs, verify with health/ping checks instead of waiting for debug stop.
 
 If SSE closes, open `/sse` again and use the new `sessionId`.
 

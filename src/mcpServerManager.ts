@@ -133,7 +133,11 @@ export class McpServerManager implements vscode.Disposable {
                     responsePayload = await this.debuggerApiWrapper.removeBreakpoint(payload);
                     break;
                 case Constants.IPC_COMMAND_START_DEBUGGING_REQUEST:
-                    responsePayload = await this.debuggerApiWrapper.startDebuggingAndWait(payload.configurationName, payload.noDebug ?? false);
+                    responsePayload = await this.debuggerApiWrapper.startDebugging(
+                        payload.configurationName,
+                        payload.noDebug ?? false,
+                        payload.stayConnected ?? false
+                    );
                     break;
                 case Constants.IPC_COMMAND_CONTINUE_DEBUGGING: {
                     this.outputChannel.appendLine(`[Coordinator] Handling 'continue_debugging' request: ${requestId}`);
