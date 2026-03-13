@@ -212,7 +212,7 @@ async function showCopyConfigMenu(serverManager: McpServerManager): Promise<void
 
 	const selectedOption = await vscode.window.showQuickPick(items, {
 		placeHolder: 'Select which MCP config format to copy',
-		title: '$(clippy) Copy MCP Config'
+		title: 'Copy MCP Config'
 	});
 
 	if (selectedOption) {
