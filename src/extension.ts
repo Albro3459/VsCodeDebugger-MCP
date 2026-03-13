@@ -50,11 +50,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// 注册复制配置命令
 	const copyMcpConfigCommand = vscode.commands.registerCommand('DebugMcpManager.copyMcpConfig', () => {
-		mcpServerManager.copyMcpConfigToClipboard();
+		showCopyConfigMenu(mcpServerManager);
 	});
 
 	// 将命令和 manager 实例添加到 context.subscriptions 以便自动清理
-	context.subscriptions.push(showServerMenuCommand, copyMcpConfigCommand, statusBarManager, mcpServerManager);
+	context.subscriptions.push(
+		showServerMenuCommand,
+		copyMcpConfigCommand,
+		statusBarManager,
+		mcpServerManager
+	);
 
 	// --- 添加自动启动逻辑 ---
 	const shouldAutoStart = getAutoStartConfig(context);
@@ -98,10 +103,10 @@ async function showServerActionMenu(context: vscode.ExtensionContext, manager: S
 		} as ActionQuickPickItem);
 	}
 
-	// 添加复制 MCP 配置 (RooCode/Cline 格式) 的菜单项
+	// 添加复制 MCP 配置的菜单项（通过下拉选择具体格式）
 	items.push({
-		label: "$(clippy) Copy MCP Config ",
-		description: "Copy MCP server config",
+		label: "$(clippy) Copy MCP Config...",
+		description: "Choose Claude JSON, Codex TOML, or VSCode JSON",
 		action: () => vscode.commands.executeCommand('DebugMcpManager.copyMcpConfig')
 	} as ActionQuickPickItem);
 
@@ -179,6 +184,39 @@ async function showServerActionMenu(context: vscode.ExtensionContext, manager: S
 		if (actionItem.action) {
 			actionItem.action();
 		}
+	}
+}
+
+async function showCopyConfigMenu(serverManager: McpServerManager): Promise<void> {
+	interface CopyConfigItem extends vscode.QuickPickItem {
+		action: () => Promise<void>;
+	}
+
+	const items: CopyConfigItem[] = [
+		{
+			label: '$(clippy) Claude JSON',
+			description: 'Copy MCP JSON config for Claude Code/Desktop',
+			action: () => serverManager.copyMcpClaudeJsonConfigToClipboard()
+		},
+		{
+			label: '$(clippy) Codex TOML',
+			description: 'Copy MCP TOML config for Codex',
+			action: () => serverManager.copyMcpTomlConfigToClipboard()
+		},
+		{
+			label: '$(clippy) VSCode JSON',
+			description: 'Copy MCP JSON config for VSCode workspace/RooCode',
+			action: () => serverManager.copyMcpVsCodeJsonConfigToClipboard()
+		}
+	];
+
+	const selectedOption = await vscode.window.showQuickPick(items, {
+		placeHolder: 'Select which MCP config format to copy',
+		title: '$(clippy) Copy MCP Config'
+	});
+
+	if (selectedOption) {
+		await selectedOption.action();
 	}
 }
 

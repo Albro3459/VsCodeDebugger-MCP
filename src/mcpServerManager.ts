@@ -5,7 +5,7 @@ import { isPortInUse, isValidPort } from './utils/portUtils';
 import { ProcessManager, ProcessStatus } from './managers/processManager';
 import { IpcHandler } from './managers/ipcHandler';
 import { DebuggerApiWrapper } from './vscode/debuggerApiWrapper';
-import { PluginRequest, PluginResponse, ContinueDebuggingParams, StepExecutionParams, StepExecutionResult, StopDebuggingPayload } from './types';
+import { PluginRequest, PluginResponse, ContinueDebuggingParams, StepExecutionParams, StopDebuggingPayload } from './types';
 import * as Constants from './constants';
 
 /**
@@ -305,13 +305,16 @@ export class McpServerManager implements vscode.Disposable {
         this.processManager.on('statusChange', onStatusChange);
     }
 
+    private getPortForConfigCopy(): number | null {
+        return this.processManager.getCurrentPort() ?? getStoredPort(this.context);
+    }
+
     /**
-     * 生成符合 RooCode/Cline 要求的 MCP 服务器配置 JSON 字符串，并复制到剪贴板。
+     * 复制 Claude MCP JSON 配置到剪贴板。
      */
-    public async copyMcpConfigToClipboard(): Promise<void> {
+    public async copyMcpClaudeJsonConfigToClipboard(): Promise<void> {
         try {
-            // 优先从 ProcessManager 获取当前运行端口，否则从 ConfigManager 获取存储端口
-            const portToUse = this.processManager.getCurrentPort() ?? getStoredPort(this.context);
+            const portToUse = this.getPortForConfigCopy();
 
             if (!portToUse) {
                 vscode.window.showWarningMessage('MCP server port is not set or server is not running. Cannot copy configuration.');
@@ -319,23 +322,86 @@ export class McpServerManager implements vscode.Disposable {
                 return;
             }
 
-            const mcpConfig = {
+            const mcpConfigForClaude = {
                 mcpServers: {
                     [Constants.MCP_CONFIG_SERVER_KEY]: {
-                        url: Constants.MCP_CONFIG_URL_TEMPLATE.replace('{port}', String(portToUse)),
-                        headers: {} // 保留 headers 字段
+                        url: Constants.MCP_CONFIG_URL_TEMPLATE.replace('{port}', String(portToUse)).replace('/sse', '/mcp')
                     }
                 }
             };
 
-            const configString = JSON.stringify(mcpConfig, null, 2);
+            const configString = JSON.stringify(mcpConfigForClaude, null, 2);
             await vscode.env.clipboard.writeText(configString);
-            vscode.window.showInformationMessage(`MCP server configuration (Port: ${portToUse}) copied to clipboard!`);
-            this.outputChannel.appendLine('[Coordinator] MCP server configuration (Port: ${portToUse}) copied to clipboard.');
-            console.log('[Coordinator] MCP config copied:', configString);
+            vscode.window.showInformationMessage(`Claude MCP JSON configuration (Port: ${portToUse}) copied to clipboard!`);
+            this.outputChannel.appendLine(`[Coordinator] Claude MCP JSON configuration (Port: ${portToUse}) copied to clipboard.`);
+            console.log('[Coordinator] Claude MCP JSON config copied:', configString);
 
         } catch (error: unknown) {
-            const errorMsg = `Failed to copy MCP configuration: ${error instanceof Error ? error.message : String(error)}`;
+            const errorMsg = `Failed to copy Claude MCP JSON configuration: ${error instanceof Error ? error.message : String(error)}`;
+            console.error('[Coordinator]', errorMsg);
+            this.outputChannel.appendLine(`[Coordinator Error] ${errorMsg}`);
+            vscode.window.showErrorMessage(errorMsg);
+        }
+    }
+
+    /**
+     * 复制 MCP 客户端 TOML 配置到剪贴板。
+     */
+    public async copyMcpTomlConfigToClipboard(): Promise<void> {
+        try {
+            const portToUse = this.getPortForConfigCopy();
+
+            if (!portToUse) {
+                vscode.window.showWarningMessage('MCP server port is not set or server is not running. Cannot copy TOML configuration.');
+                this.outputChannel.appendLine('[Coordinator] Attempted to copy TOML config, but port is not available.');
+                return;
+            }
+
+            const tomlConfig = `[mcp_servers.${Constants.MCP_CONFIG_SERVER_KEY}]
+url = "http://127.0.0.1:${portToUse}/mcp"
+`;
+
+            await vscode.env.clipboard.writeText(tomlConfig);
+            vscode.window.showInformationMessage(`MCP TOML configuration (Port: ${portToUse}) copied to clipboard!`);
+            this.outputChannel.appendLine(`[Coordinator] MCP TOML configuration (Port: ${portToUse}) copied to clipboard.`);
+            console.log('[Coordinator] MCP TOML config copied:', tomlConfig);
+        } catch (error: unknown) {
+            const errorMsg = `Failed to copy MCP TOML configuration: ${error instanceof Error ? error.message : String(error)}`;
+            console.error('[Coordinator]', errorMsg);
+            this.outputChannel.appendLine(`[Coordinator Error] ${errorMsg}`);
+            vscode.window.showErrorMessage(errorMsg);
+        }
+    }
+
+    /**
+     * 复制 VS Code MCP JSON 配置（mcp.json）到剪贴板。
+     */
+    public async copyMcpVsCodeJsonConfigToClipboard(): Promise<void> {
+        try {
+            const portToUse = this.getPortForConfigCopy();
+
+            if (!portToUse) {
+                vscode.window.showWarningMessage('MCP server port is not set or server is not running. Cannot copy VS Code JSON configuration.');
+                this.outputChannel.appendLine('[Coordinator] Attempted to copy VS Code JSON config, but port is not available.');
+                return;
+            }
+
+            const mcpConfigForVsCode = {
+                servers: {
+                    [Constants.MCP_CONFIG_SERVER_KEY]: {
+                        type: 'http',
+                        url: Constants.MCP_CONFIG_URL_TEMPLATE.replace('{port}', String(portToUse)).replace('/sse', '/mcp')
+                    }
+                }
+            };
+
+            const configString = JSON.stringify(mcpConfigForVsCode, null, 2);
+            await vscode.env.clipboard.writeText(configString);
+            vscode.window.showInformationMessage(`VSCode MCP JSON configuration (Port: ${portToUse}) copied to clipboard!`);
+            this.outputChannel.appendLine(`[Coordinator] VSCode MCP JSON configuration (Port: ${portToUse}) copied to clipboard.`);
+            console.log('[Coordinator] VSCode MCP JSON config copied:', configString);
+        } catch (error: unknown) {
+            const errorMsg = `Failed to copy VSCode MCP JSON configuration: ${error instanceof Error ? error.message : String(error)}`;
             console.error('[Coordinator]', errorMsg);
             this.outputChannel.appendLine(`[Coordinator Error] ${errorMsg}`);
             vscode.window.showErrorMessage(errorMsg);

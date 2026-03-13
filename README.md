@@ -1,9 +1,6 @@
 # VSCode Debugger MCP
 
-[![中文](https://img.shields.io/badge/Language-中文-blue)](README.cn.md)
 [![Version](https://vsmarketplacebadges.dev/version/Albro3459.mcp-vscode-debugger.png)](https://marketplace.visualstudio.com/items?itemName=Albro3459.mcp-vscode-debugger)
-
-![demo_en](assets/demo_en.gif)
 
 This is a VS Code extension designed to enable AI agents to interact with VS Code's debugging capabilities through a Model Context Protocol (MCP) server, achieving an automated and intelligent debugging experience. 
 
@@ -13,7 +10,7 @@ This project is a fork of [NyxJae/VsCodeDebugger-MCP](https://github.com/NyxJae/
 
 The maintained fork is available at [Albro3459/VsCodeDebugger-MCP](https://github.com/Albro3459/VsCodeDebugger-MCP).
 
-Maintainer note: GitHub [@Albro3459](https://github.com/Albro3459) updated this project by forking the original repo, updating MCP support and versions, and applying additional minor fixes.
+[@Albro3459](https://github.com/Albro3459) updated this project by forking the original repo, updating MCP support and versions, and applying additional minor fixes.
 
 ## ✨ Features
 
@@ -28,7 +25,7 @@ Maintainer note: GitHub [@Albro3459](https://github.com/Albro3459) updated this 
     *   **Convenient Control**: Click the status bar item to quickly start or stop the MCP server.
     *   **Port Configuration**: Automatically detects port occupancy. If the default port is occupied, allows the user to manually specify a new port number, which is saved to VS Code settings.
     *   **Auto Start**: Configurable option to automatically start the MCP server when VS Code launches, saved to VS Code settings.
-    *   **Client Configuration**: Provides a one-click copy function to easily copy the configuration information (such as URL, port) required to connect to this MCP server to AI clients (e.g., ClaudeDesktop, RooCode, Cline, Cursor, etc.).
+    *   **Client Configuration**: Provides a one-click copy function to easily copy the configuration information (such as URL, port) required to connect to this MCP server to AI clients (e.g., Claude CLI/Desktop, Codex CLI/Desktop, RooCode, Cline, Cursor, etc.).
 *   **📡 Communication Protocol**:
     *   The VS Code extension communicates with the local MCP server via subprocess and IPC.
     *   The MCP server supports **Streamable HTTP** (`/mcp`) and **SSE fallback** (`/sse` + `/messages`).
@@ -42,22 +39,71 @@ Maintainer note: GitHub [@Albro3459](https://github.com/Albro3459) updated this 
 
 ## 📖 Usage Guide
 
-Taking RooCode as an example:
-1. Search and install the extension in the VS Code Extensions Marketplace.
-Confirm that the MCP server is running. ![MCPRunning_cn](assets/MCPRunning_cn.png)
-Copy the configuration to the RooCode MCP configuration file. ![copy_config_en](assets/copy_config_en.gif)
-Before each use, check if RooCode is connected to the MCP server. ![connect_en](assets/connect_en.gif)
+* First, search and install the extension in the VS Code Extensions Marketplace. `mcp-vscode-debugger`
 
-### MCP Client `config.toml` (Codex Desktop / external agents)
+### Connect from Claude or the RooCode Extension
+
+1. Click the extension on the VSCode bottom bar. (`Debug-MCP: Status`)
+2. Choose `Copy MCP Config...`.
+3. Select `Claude JSON` for Claude, or `VSCode JSON` for RooCode.
+4. Paste the copied JSON block into your agent's or workspace's config file.
+    * Claude Code CLI/Desktop app: `~/.claude.json`, `~/.claude/settings.json`, or `.mcp.json` 
+    * VSCode workspace (RooCode): `.vscode/mcp.json`
+5. Click the extension on the VSCode bottom bar again.
+6. Choose `Start Debug MCP Server`.
+7. Confirm that the MCP server is running. 
+
+    ![MCPRunning](./assets/MCPRunning.png)
+8. Restart Claude/RooCode agent and verify it connects to `mcp-vscode-debugger`.
+
+### Connect from Codex
+
+1. Click the extension on the VSCode bottom bar. (`Debug-MCP: Status`)
+2. Choose `Copy MCP Config...`.
+3. Select `Codex TOML`.
+4. Paste the copied TOML block into your Codex `~/.codex/config.toml`.
+5. Click the extension on the VSCode bottom bar again.
+6. Choose `Start Debug MCP Server`.
+7. Confirm that the MCP server is running. 
+
+    ![MCPRunning](./assets/MCPRunning.png)
+8. Restart Codex (if already running) and verify it connects to `mcp-vscode-debugger`.
+
+### MCP Client Config
 
 The MCP server must already be running before you start your agent.
 
-```toml
-[mcp_servers.mcp-vscode-debugger]
-url = "http://127.0.0.1:6009/mcp"
-```
+This extension provides one copy action with a format dropdown in the server actions menu:
 
-Important: do **not** use `localhost`; use `127.0.0.1`.
+- `Copy MCP Config...` -> `Claude JSON`: Copies JSON format MCP config for Claude Code CLI/Desktop.
+    * Claude Code CLI/Desktop app: `~/.claude.json`, `~/.claude/settings.json`, or `.mcp.json` 
+    ```json
+    {
+      "mcpServers": {
+        "mcp-vscode-debugger": {
+          "url": "http://127.0.0.1:6009/mcp"
+        }
+      }
+    }
+    ```
+- `Copy MCP Config...` -> `Codex TOML`: Copies TOML format MCP config for Codex `~/.codex/config.toml`
+    ```toml
+    [mcp_servers.mcp-vscode-debugger]
+    url = "http://127.0.0.1:6009/mcp"
+    ```
+- `Copy MCP Config...` -> `VSCode JSON`: Copies JSON format MCP config for VSCode workspace (RooCode): `.vscode/mcp.json`
+    ```json
+    {
+      "servers": {
+        "mcp-vscode-debugger": {
+          "type": "http",
+          "url": "http://127.0.0.1:6009/mcp"
+        }
+      }
+    }
+    ```
+
+Important: use `127.0.0.1`, do **not** use `localhost`.
 
 ## 🔧 Extension Settings
 
@@ -79,19 +125,19 @@ Example:
 
 ## 🐞 Known Issues / Potential Issues
 
-*   Only tested with the Codex app and the VSCode RooCode client.
-*   It is recommended to use project configuration instead of global configuration. First, it is easy to manage. Different projects can use different ports. Second, when debugging VsCode plug-in projects, the debug host window will be opened, resulting in multiple AI clients (RooCode) opening, resulting in session ID conflicts.![note_1](assets/note_1_en.png)
+*   Only tested with the Claude/Codex external-agent flow and the VSCode RooCode client.
+*   It is recommended to use project configuration instead of global configuration. First, it is easy to manage. Different projects can use different ports. Second, when debugging VSCode plug-in projects, the debug host window will be opened, resulting in multiple AI clients, causing session ID conflicts.
 *   Transport mode is selected by the first request and then locked until restart:
+    *   Claude/Codex external-agent first request selects `Streamable HTTP`.
     *   RooCode first request selects `SSE`.
-    *   External agents (for example Codex Desktop) first request selects `Streamable HTTP`.
     *   Switching mode requires restarting the MCP server.
     *   This is an architectural issue.
 
 ### Logs and Error Information
 
 If you find errors, you can view the logs in the VS Code Output panel for easier feedback and issue reporting.
-*   MCP Server Logs: ![mcp_log](assets/mcp_log.png)
-*   Extension and Simulated Client Logs: ![extension_log](assets/extension_log.png)
+*   MCP Server Logs: ![mcp_log](./assets/mcp_log.png)
+*   Extension and Simulated Client Logs: ![extension_log](./assets/extension_log.png)
 
 ## 🔮 Future Development Plan
 
@@ -100,5 +146,6 @@ If you find errors, you can view the logs in the VS Code Output panel for easier
     *   Implement `get_variables` tool: Get a list of variables and their values for a specified scope or expandable variable.
 *   **Expression Evaluation**:
     *   Implement `evaluate_expression` tool: Evaluate an expression in the context of a specified stack frame.
-*   **Internationalization**
-*   *   English version of README images and usage guide.
+*   **Simultaneous HTTP SSE and Streamable Support**
+    *   Due to architectural design issues, the MCP server can only support one HTTP protocol and has to be restarted to switch.
+    *   Implement sweeping architectural changes to support both communication modes at the same time.

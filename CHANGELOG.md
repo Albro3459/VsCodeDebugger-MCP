@@ -1,7 +1,24 @@
 # Change Log
+
+## 1.2.1
+
+* Updated README usage documentation for Claude, Codex, and RooCode MCP setup.
+* Updated extension copy-config menu to support format selection:
+    * Claude JSON
+    * Codex TOML
+    * VSCode JSON
+
+## 1.2.0
+
+* Updated MCP server dependencies/versions and aligned behavior with the current MCP spec.
+    * Added `/mcp` endpoint support.
+    * Added Streamable HTTP transport support.
+    * Added MCP resources support.
+* Fixed JSON-with-comments parsing for `.vscode/launch.config`.
+
 ## 1.0.5
 
-* Fixed the bug where the connection was accidentally disconnected when debugging the VsCode plugin project
+* Fixed the bug where the connection was accidentally disconnected when debugging the VSCode plugin project
 
 * Fixed the bug where the single-step debugging tool does not return debug information
 
