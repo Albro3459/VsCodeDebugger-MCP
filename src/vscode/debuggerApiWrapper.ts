@@ -56,14 +56,18 @@ export class DebuggerApiWrapper {
     }
 
     /**
-     * Starts a debugging session and waits for it to stop or complete,
-     * delegating to the DebugSessionManager.
+     * Starts a debugging session.
+     * By default this returns immediately with "running".
+     * If stayConnected is true, waits until first stop/finish/timeout.
      * @param configurationName The name of the debug configuration to launch.
      * @param noDebug Whether to start without debugging.
-     * @returns Promise resolving to the session result (stopped, completed, error, timeout).
+     * @param stayConnected Whether to keep the request open waiting for debug events.
      */
-    public async startDebuggingAndWait(configurationName: string, noDebug: boolean): Promise<StartDebuggingResponsePayload> {
-        return this.debugSessionManager.startDebuggingAndWait(configurationName, noDebug);
+    public async startDebugging(configurationName: string, noDebug: boolean, stayConnected: boolean = false): Promise<StartDebuggingResponsePayload> {
+        if (stayConnected) {
+            return this.debugSessionManager.startDebuggingAndWait(configurationName, noDebug);
+        }
+        return this.debugSessionManager.startDebugging(configurationName, noDebug);
     }
 
     /**
@@ -144,4 +148,3 @@ export class DebuggerApiWrapper {
         }
     }
 }
-

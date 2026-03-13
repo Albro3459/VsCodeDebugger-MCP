@@ -39,6 +39,12 @@ When prompted, paste the PAT.
 npm run compile
 ```
 
+This now does two builds in order:
+- rebuilds `mcp-server/dist` from `mcp-server/src`
+- compiles the VS Code extension into `out/`
+
+This helps prevent source/runtime drift between `mcp-server/src/*` and stale files in `mcp-server/dist/*`.
+
 2. Publish:
 
 ```bash

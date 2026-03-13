@@ -9,7 +9,7 @@ type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // Input Schema (Keep as is)
 export const stopDebuggingSchema = z.object({
-    sessionId: z.string().optional().describe("The ID of the debug session to stop. If omitted, the currently active session will be attempted."),
+    session_id: z.string().optional().describe("The ID of the debug session to stop. If omitted, the currently active session will be attempted.")
 });
 
 export type StopDebuggingArgs = z.infer<typeof stopDebuggingSchema>;
@@ -34,12 +34,13 @@ export const stopDebuggingTool = {
     ): Promise<z.infer<typeof StopDebuggingOutputSchema>> {
         const toolName = this.name;
         logger.info(`[MCP Tool - ${toolName}] Executing with args:`, args); // 使用 logger
+        const sessionId = args.session_id;
 
         try {
-            logger.debug(`[MCP Tool - ${toolName}] Sending request to plugin:`, { sessionId: args.sessionId }); // Log payload being sent
+            logger.debug(`[MCP Tool - ${toolName}] Sending request to plugin:`, { sessionId }); // Log payload being sent
             const response: PluginResponse = await sendRequestToPlugin({
                  command: Constants.IPC_COMMAND_STOP_DEBUGGING,
-                 payload: { sessionId: args.sessionId } // Pass args directly
+                 payload: { sessionId } // Keep plugin payload camelCase
             });
 
             // --- 更新 IPC 响应处理日志 ---

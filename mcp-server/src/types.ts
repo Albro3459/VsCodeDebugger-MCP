@@ -70,6 +70,7 @@ export type RemoveBreakpointResponsePayload = { message?: string };
 export interface StartDebuggingRequestPayload {
   configurationName: string;
   noDebug: boolean;
+  stayConnected?: boolean;
 }
 
 export interface VariableInfo {
@@ -106,6 +107,7 @@ export interface StopEventData {
 }
 
 export type StartDebuggingResponsePayload =
+  | { status: "running"; message: string; session_id?: string }
   | { status: "stopped"; data: StopEventData }
   | { status: "completed"; message: string }
   | { status: "error"; message: string }

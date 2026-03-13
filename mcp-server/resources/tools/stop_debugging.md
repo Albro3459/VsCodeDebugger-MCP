@@ -3,4 +3,4 @@
 Stops a debug session.
 
 Optional args:
-- `sessionId` (camelCase)
+- `session_id`

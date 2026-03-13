@@ -12,6 +12,7 @@ type ToolRequestExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 export const startDebuggingSchema = z.object({
   configuration_name: z.string().min(1, "Configuration name cannot be empty.").describe("The name of the configuration in launch.json"),
   no_debug: z.boolean().optional().default(false).describe("Whether to start in non-debug mode"),
+  stay_connected: z.boolean().optional().default(false).describe("When true, keep the call open waiting for stop/termination/timeout. For long-running servers, prefer false and validate service health separately."),
 });
 
 export type StartDebuggingArgs = z.infer<typeof startDebuggingSchema>;
@@ -23,7 +24,7 @@ export type StartDebuggingArgs = z.infer<typeof startDebuggingSchema>;
 const StartDebuggingOutputSchema = z.object({
     status: z.enum(["stopped", "completed", "error", "timeout", "interrupted", "running"]), // Add 'running' if applicable
     data: z.any().optional().describe("Contains details of the stop event when status is 'stopped'."),
-    message: z.string().optional().describe("Contains descriptive information when status is 'completed', 'error', 'timeout', or 'interrupted'."),
+    message: z.string().optional().describe("Contains descriptive information about the result. For status 'running', this confirms immediate non-blocking return."),
     session_id: z.string().optional().describe("The ID of the successfully started debug session"), // Add session_id if returned by plugin
 }).describe("Execution result of the start debugging tool");
 
@@ -45,6 +46,7 @@ export const startDebuggingTool = {
         const payloadForPlugin: StartDebuggingRequestPayload = {
             configurationName: args.configuration_name,
             noDebug: args.no_debug,
+            stayConnected: args.stay_connected,
         };
 
         const toolTimeout = 60000; // Keep timeout

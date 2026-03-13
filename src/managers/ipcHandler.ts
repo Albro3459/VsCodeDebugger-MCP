@@ -105,12 +105,13 @@ export class IpcHandler implements vscode.Disposable { // 实现 Disposable 接�
                 case Constants.IPC_COMMAND_START_DEBUGGING_REQUEST:
                     // 增强日志：记录完整的 payload
                     this.outputChannel.appendLine(`[IPC Handler] Handling '${Constants.IPC_COMMAND_START_DEBUGGING_REQUEST}' request (ID: ${requestId}). Payload: ${JSON.stringify(payload)}`);
-                    const startResult = await this.debuggerApiWrapper.startDebuggingAndWait(
+                    const startResult = await this.debuggerApiWrapper.startDebugging(
                         (payload as StartDebuggingRequestPayload).configurationName,
-                        (payload as StartDebuggingRequestPayload).noDebug
+                        (payload as StartDebuggingRequestPayload).noDebug,
+                        (payload as StartDebuggingRequestPayload).stayConnected ?? false
                     );
                     // 增强日志：记录返回的 result，并安全地访问可选属性
-                    let logMessage = `[IPC Handler] Result from startDebuggingAndWait for request ${requestId}: Status=${startResult.status}`;
+                    let logMessage = `[IPC Handler] Result from startDebugging for request ${requestId}: Status=${startResult.status}`;
                     if ('message' in startResult && startResult.message) {
                         logMessage += `, Message=${startResult.message}`;
                     }
@@ -222,12 +223,12 @@ export class IpcHandler implements vscode.Disposable { // 实现 Disposable 接�
 
         // 检查 payload 是否是 StartDebuggingResponsePayload 或 StepExecutionResult 类型
         const isDebugResultPayload = payload && typeof payload === 'object' && 'status' in payload &&
-                                     ['stopped', 'completed', 'error', 'timeout', 'interrupted'].includes(payload.status);
+                                     ['running', 'stopped', 'completed', 'error', 'timeout', 'interrupted'].includes(payload.status);
 
         if (isDebugResultPayload) {
             const debugResultPayload = payload as StartDebuggingResponsePayload | StepExecutionResult; // 联合类型
             // 映射到顶层 IPC 状态
-            if (debugResultPayload.status === 'stopped' || debugResultPayload.status === 'completed') {
+            if (debugResultPayload.status === 'running' || debugResultPayload.status === 'stopped' || debugResultPayload.status === 'completed') {
                 finalStatus = Constants.IPC_STATUS_SUCCESS;
                 finalPayload = debugResultPayload; // 成功时，payload 就是完整的 Debug 结果
                 finalError = undefined; // 清除可能存在的外部错误
