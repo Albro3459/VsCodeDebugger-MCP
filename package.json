@@ -2,7 +2,7 @@
   "name": "mcp-vscode-debugger",
   "displayName": "MCP VSCode Debugger",
   "description": "An MCP server combined with a VSCode plugin provides AI with the capability for breakpoint debugging within VSCode.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "Albro3459",
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
       },
       {
         "command": "DebugMcpManager.copyMcpConfig",
-        "title": "Debug MCP: Copy MCP Server Config"
+        "title": "Debug MCP: Copy MCP Config..."
       }
     ],
     "configuration": {
