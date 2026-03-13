@@ -17,10 +17,17 @@ interface LaunchConfiguration {
     [key: string]: any;
 }
 
+interface LaunchCompound {
+    name: string;
+    configurations: string[];
+    [key: string]: any;
+}
+
 // 定义 launch.json 顶层结构
 interface LaunchJson {
     version?: string;
     configurations: LaunchConfiguration[];
+    compounds?: LaunchCompound[];
 }
 
 // --- 新增：定义工具的输入 Schema ---
@@ -31,8 +38,10 @@ const GetDebuggerConfigurationsOutputSchema = z.object({
     status: z.enum([Constants.IPC_STATUS_SUCCESS, Constants.IPC_STATUS_ERROR]),
     configurations: z.array(z.object({ // 返回具体的配置数组，而不是字符串
         name: z.string(),
-        type: z.string(),
-        request: z.string(),
+        type: z.string().optional(),
+        request: z.string().optional(),
+        kind: z.enum(['configuration', 'compound']).optional(),
+        configurations: z.array(z.string()).optional(),
     }).passthrough()).optional().describe("List of debug configurations returned on success"),
     message: z.string().optional().describe("Error message returned on failure"),
 }).describe("Execution result of the get debug configurations tool");
@@ -86,8 +95,19 @@ export const getDebuggerConfigurationsTool = {
                     const validConfigurations = launchJson.configurations.filter(
                         config => typeof config.name === 'string' && typeof config.type === 'string' && typeof config.request === 'string'
                     );
-                    // 直接返回对象数组，而不是序列化后的字符串
-                    const resultConfigurations = validConfigurations.map(config => ({ ...config }));
+                    const validCompounds = (launchJson.compounds || []).filter(
+                        compound => typeof compound.name === 'string' && Array.isArray(compound.configurations)
+                    );
+                    // Return both launch configurations and compounds.
+                    const resultConfigurations = [
+                        ...validConfigurations.map(config => ({ ...config, kind: 'configuration' as const })),
+                        ...validCompounds.map(compound => ({
+                            ...compound,
+                            type: 'compound',
+                            request: 'launch',
+                            kind: 'compound' as const
+                        })),
+                    ];
 
                     logger.info(`[MCP Tool - ${toolName}] Successfully read ${resultConfigurations.length} configurations.`); // 使用 logger
                     return { status: Constants.IPC_STATUS_SUCCESS, configurations: resultConfigurations };

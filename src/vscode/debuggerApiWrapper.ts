@@ -103,11 +103,10 @@ export class DebuggerApiWrapper {
     }
 
     /**
-     * Retrieves available debugger configurations directly from VS Code workspace settings.
-     * This method remains in the Facade as it deals directly with workspace configuration.
-     * @returns An array of available debug configurations or an empty array if none are found or an error occurs.
+     * Retrieves available debugger configurations and compounds from VS Code workspace settings.
+     * @returns An array of launch entries or an empty array if none are found or an error occurs.
      */
-    public getDebuggerConfigurations(): vscode.DebugConfiguration[] {
+    public getDebuggerConfigurations(): any[] {
         try {
             const workspaceFolders = vscode.workspace.workspaceFolders;
             if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -117,13 +116,19 @@ export class DebuggerApiWrapper {
             // Assuming the first workspace folder is the relevant one for launch configurations
             const folder = workspaceFolders[0];
             const launchConfig = vscode.workspace.getConfiguration('launch', folder.uri);
-            const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations');
+            const configurations = launchConfig.get<vscode.DebugConfiguration[]>('configurations') || [];
+            const compounds = launchConfig.get<Array<{ name: string; configurations?: string[] }>>('compounds') || [];
 
-            if (!configurations) {
-                console.warn("[DebuggerApiWrapper] 'launch.configurations' not found or is not an array.");
-                return [];
-            }
-            return configurations;
+            const mappedConfigurations = configurations.map(config => ({ ...config, kind: 'configuration' }));
+            const mappedCompounds = compounds.map(compound => ({
+                name: compound.name,
+                type: 'compound',
+                request: 'launch',
+                kind: 'compound',
+                configurations: compound.configurations || [],
+            }));
+
+            return [...mappedConfigurations, ...mappedCompounds];
         } catch (error: any) {
             console.error("[DebuggerApiWrapper] Error retrieving debugger configurations:", error);
             return [];

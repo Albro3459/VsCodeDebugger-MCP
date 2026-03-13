@@ -1,6 +1,7 @@
 # Tool: start_debugging
 
 Starts a debug session from a launch config.
+Both regular configurations and compound entries are supported by name.
 
 Behavior:
 - Returns immediately with status `running` by default after launch is accepted.
