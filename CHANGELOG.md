@@ -1,6 +1,6 @@
 # Change Log
 
-## 1.2.2
+## 1.2.2 - 1.2.3
 
 * Updated `start_debugging` to return immediately by default after launch (non-blocking), so long-running/watch/server configs do not leave agent calls stuck.
 * Added optional `stay_connected` mode for `start_debugging` when callers explicitly want to wait for stop/termination behavior.
