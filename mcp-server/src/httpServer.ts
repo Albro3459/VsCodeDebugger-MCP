@@ -318,7 +318,7 @@ export function startHttpServer(listenPort: number) {
                  logger.error('[HTTP Server] Could not determine the actual listening port. Exiting.');
                  process.exit(1);
             }
-            const listenUrl = `http://localhost:${actualPort}`;
+            const listenUrl = `http://127.0.0.1:${actualPort}`;
 
             // **重要:** 务必使用标准输出，用于插件端捕获以显示服务器状态,其输出内容不要修改
             console.log(`${Constants.MCP_SERVER_LISTENING_MESSAGE_PREFIX}${actualPort}`);

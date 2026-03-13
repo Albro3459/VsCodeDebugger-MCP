@@ -1,11 +1,19 @@
 # VSCode Debugger MCP
 
 [![中文](https://img.shields.io/badge/Language-中文-blue)](README.cn.md)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/NyxJae.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NyxJae.vscode-debugger-mcp)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.vscode-debugger-mcp)
 
 ![demo_en](assets/demo_en.gif)
 
-This is a VS Code extension designed to enable AI agents to interact with VS Code's debugging capabilities through a Model Context Protocol (MCP) server, achieving an automated and intelligent debugging experience. Assisted development using [RooCode](https://github.com/RooVetGit/Roo-Code) + [Gemini 2.5 Pro](https://deepmind.google/technologies/gemini/pro/).
+This is a VS Code extension designed to enable AI agents to interact with VS Code's debugging capabilities through a Model Context Protocol (MCP) server, achieving an automated and intelligent debugging experience. 
+
+## 📌 Fork Information
+
+This project is a fork of [NyxJae/VsCodeDebugger-MCP](https://github.com/NyxJae/VsCodeDebugger-MCP).
+
+The maintained fork is available at [Albro3459/VsCodeDebugger-MCP](https://github.com/Albro3459/VsCodeDebugger-MCP).
+
+Maintainer note: GitHub [@Albro3459](https://github.com/Albro3459) updated this project by forking the original repo, updating MCP support and versions, and applying additional minor fixes.
 
 ## ✨ Features
 
@@ -23,7 +31,7 @@ This is a VS Code extension designed to enable AI agents to interact with VS Cod
     *   **Client Configuration**: Provides a one-click copy function to easily copy the configuration information (such as URL, port) required to connect to this MCP server to AI clients (e.g., ClaudeDesktop, RooCode, Cline, Cursor, etc.).
 *   **📡 Communication Protocol**:
     *   The VS Code extension communicates with the local MCP server via subprocess and IPC.
-    *   The MCP server communicates with AI clients using **HTTP + Server-Sent Events (SSE)**.
+    *   The MCP server supports **Streamable HTTP** (`/mcp`) and **SSE fallback** (`/sse` + `/messages`).
 
 ## 🚀 Requirements
 
@@ -39,6 +47,17 @@ Taking RooCode as an example:
 Confirm that the MCP server is running. ![MCPRunning_cn](assets/MCPRunning_cn.png)
 Copy the configuration to the RooCode MCP configuration file. ![copy_config_en](assets/copy_config_en.gif)
 Before each use, check if RooCode is connected to the MCP server. ![connect_en](assets/connect_en.gif)
+
+### MCP Client `config.toml` (Codex Desktop / external agents)
+
+The MCP server must already be running before you start your agent.
+
+```toml
+[mcp_servers.vscode-debugger-mcp]
+url = "http://127.0.0.1:6009/mcp"
+```
+
+Important: do **not** use `localhost`; use `127.0.0.1`.
 
 ## 🔧 Extension Settings
 
@@ -60,14 +79,19 @@ Example:
 
 ## 🐞 Known Issues / Potential Issues
 
-*   Only simple tests have been done with the RooCode client. It is unclear how it works with other clients.
+*   Only tested with the Codex app and the VSCode RooCode client.
 *   It is recommended to use project configuration instead of global configuration. First, it is easy to manage. Different projects can use different ports. Second, when debugging VsCode plug-in projects, the debug host window will be opened, resulting in multiple AI clients (RooCode) opening, resulting in session ID conflicts.![note_1](assets/note_1_en.png)
+*   Transport mode is selected by the first request and then locked until restart:
+    *   RooCode first request selects `SSE`.
+    *   External agents (for example Codex Desktop) first request selects `Streamable HTTP`.
+    *   Switching mode requires restarting the MCP server.
+    *   This is an architectural issue.
 
 ### Logs and Error Information
 
 If you find errors, you can view the logs in the VS Code Output panel for easier feedback and issue reporting.
 *   MCP Server Logs: ![mcp_log](assets/mcp_log.png)
-*   Extension and Simulated Client Logs: ![extention_log](assets/extention_log.png)
+*   Extension and Simulated Client Logs: ![extension_log](assets/extension_log.png)
 
 ## 🔮 Future Development Plan
 
@@ -78,7 +102,3 @@ If you find errors, you can view the logs in the VS Code Output panel for easier
     *   Implement `evaluate_expression` tool: Evaluate an expression in the context of a specified stack frame.
 *   **Internationalization**
 *   *   English version of README images and usage guide.
-
-
-## Thanks to the following excellent open source projects
-[RooCode](https://github.com/RooVetGit/Roo-Code)

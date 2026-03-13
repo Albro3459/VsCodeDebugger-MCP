@@ -1,11 +1,19 @@
 # VSCode Debugger MCP
 
 [![English](https://img.shields.io/badge/Language-English-blue)](README.md)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/NyxJae.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=NyxJae.vscode-debugger-mcp)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.vscode-debugger-mcp)
 
 ![demo_cn](assets/demo_cn.gif)
 
 这是一个 VS Code 扩展，旨在通过 Model Context Protocol (MCP) 服务器，使 AI 代理能够与 VS Code 的调试功能进行交互，从而实现自动化和智能化的调试体验。使用[RooCode](https://github.com/RooVetGit/Roo-Code) + [Gemini 2.5 Pro](https://deepmind.google/technologies/gemini/pro/) 辅助开发
+
+## 📌 Fork 信息
+
+本项目 fork 自 [NyxJae/VsCodeDebugger-MCP](https://github.com/NyxJae/VsCodeDebugger-MCP)。
+
+当前维护仓库为 [Albro3459/VsCodeDebugger-MCP](https://github.com/Albro3459/VsCodeDebugger-MCP)。
+
+维护者说明：GitHub [@Albro3459](https://github.com/Albro3459) 通过 fork 原项目，更新了 MCP 和相关版本，并做了其他一些小修复。
 
 ## ✨ 特性
 
@@ -23,7 +31,7 @@
     *   **客户端配置**: 提供一键复制功能，方便将连接此 MCP 服务器所需的配置信息（如 URL、端口）复制到 AI 客户端（如 ClaudeDesktop, RooCode, Cline, Cursor 等）。
 *   **📡 通信协议**:
     *   VS Code 扩展与本地 MCP 服务器之间通过子进程和 IPC 通信。
-    *   MCP 服务器与 AI 客户端之间使用 **HTTP + Server-Sent Events (SSE)** 进行通信。
+    *   MCP 服务器支持 **Streamable HTTP**（`/mcp`）和 **SSE 回退模式**（`/sse` + `/messages`）。
 
 ## 🚀 要求
 
@@ -38,6 +46,17 @@
 2. 确认MCP服务器已开启 ![MCPRunning_cn](assets/MCPRunning_cn.png)
 3. 复制配置到RooCodeMCP配置文件中. ![copy_config_cn](assets/copy_config_cn.gif)
 4. 每次使用前,检查RooCode是否和MCP服务器连接. ![connect_cn](assets/connect_cn.gif)
+
+### MCP 客户端 `config.toml`（Codex Desktop / 其他外部 Agent）
+
+启动 Agent 之前，MCP 服务器必须已经在运行。
+
+```toml
+[mcp_servers.vscode-debugger-mcp]
+url = "http://127.0.0.1:6009/mcp"
+```
+
+重要：不要使用 `localhost`，请使用 `127.0.0.1`。
 
 ## 🔧 扩展设置
 
@@ -61,11 +80,16 @@
 
 *   只在 RooCode 这一个客户端做过简单测试,尚不清楚在其他客户端工作情况
 *   建议使用项目配置而非全局配置,一是便于管理,不同项目可使用不同端口，二是在调试VsCode插件项目时,会打开调试宿主窗口,导致多开AI客户端(RooCode),导致会话ID冲突.![note_1](assets/note_1_cn.png)
+*   传输模式由第一次请求决定，并在重启前保持不变：
+    *   RooCode 首次请求会将模式设为 `SSE`。
+    *   外部 Agent（例如 Codex Desktop）首次请求会将模式设为 `Streamable HTTP`。
+    *   需要切换模式时，必须重启 MCP 服务器。
+    *   这是一个架构层面的限制（architectural issue）。
 
 ### 日志与报错信息
 如果发现错误,可在VsCode的输出中查看日志,方便反馈提issues.
 *   MCP服务器日志:![mcp_log](assets/mcp_log.png)
-*   插件与模拟客户端日志:![extention_log](assets/extention_log.png)
+*   插件与模拟客户端日志:![extension_log](assets/extension_log.png)
 
 ## 🔮 未来开发计划
 

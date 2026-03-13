@@ -2,6 +2,9 @@
 
 Use this only when native MCP client integration is unavailable.
 
+Do not use `localhost`; use `127.0.0.1`.
+Start the MCP server before starting your agent.
+
 ## 1) Open SSE
 
 ```bash
@@ -27,3 +30,5 @@ POST JSON-RPC to `http://127.0.0.1:6009/messages?sessionId=...`:
 - `resources/list`, `resources/templates/list`, `resources/read`
 
 If SSE closes, open `/sse` again and use the new `sessionId`.
+
+Transport mode is locked by the first request and requires server restart to switch (architectural limitation).
