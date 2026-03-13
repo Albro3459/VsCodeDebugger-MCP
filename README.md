@@ -1,7 +1,7 @@
 # VSCode Debugger MCP
 
 [![中文](https://img.shields.io/badge/Language-中文-blue)](README.cn.md)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.mcp-vscode-debugger?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.mcp-vscode-debugger)
+[![Version](https://vsmarketplacebadges.dev/version/Albro3459.mcp-vscode-debugger.png)](https://marketplace.visualstudio.com/items?itemName=Albro3459.mcp-vscode-debugger)
 
 ![demo_en](assets/demo_en.gif)
 
