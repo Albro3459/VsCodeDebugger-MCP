@@ -50,5 +50,3 @@ export const MCP_CONFIG_SERVER_KEY = 'mcp-debugger';
 export const MCP_CONFIG_URL_TEMPLATE = 'http://127.0.0.1:{port}/sse';
 // 服务器启动消息
 export const MCP_SERVER_LISTENING_MESSAGE_PREFIX = 'MCP Server listening on port ';
-// 自动启动配置键 (用于 Global State)
-export const LEGACY_AUTO_START_KEY = 'mcpServer.autoStart';
