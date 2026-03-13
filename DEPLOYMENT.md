@@ -31,33 +31,13 @@ npx vsce login Albro3459
 
 When prompted, paste the PAT.
 
-## Release Steps
+## Publish and Update Version
 
-1. Build:
-
-```bash
-npm run compile
-```
-
-This now does two builds in order:
-- rebuilds `mcp-server/dist` from `mcp-server/src`
-- compiles the VS Code extension into `out/`
-
-This helps prevent source/runtime drift between `mcp-server/src/*` and stale files in `mcp-server/dist/*`.
-
-2. Publish:
+Bump versions and republish:
 
 ```bash
-npx vsce publish
-```
-
-## Update Version
-
-Bump version and republish:
-
-```bash
-npm version patch --no-git-tag-version && cd mcp-server && npm version patch --no-git-tag-version && cd -
-npx vsce publish
+npm run version:update
+npm run publish # triggers 'vscode:prepublish' which compiles both directories
 ```
 
 ## Post-Publish Verification
