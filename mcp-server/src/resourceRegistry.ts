@@ -5,7 +5,7 @@ import { server } from './mcpInstance';
 import { logger } from './config';
 import * as Constants from './constants';
 
-const RESOURCE_ROOT = 'file://vscode-debugger-mcp';
+const RESOURCE_ROOT = 'file://mcp-debugger';
 const DOCS_ROOT = `${RESOURCE_ROOT}/docs`;
 const TOOLS_ROOT = `${RESOURCE_ROOT}/tools`;
 const TRANSPORTS_ROOT = `${RESOURCE_ROOT}/transports`;
@@ -53,7 +53,7 @@ export function registerResources() {
         `${DOCS_ROOT}/quickstart.md`,
         {
             title: 'Quickstart',
-            description: 'Concise setup and usage for vscode-debugger-mcp.',
+            description: 'Concise setup and usage for mcp-debugger.',
             mimeType: 'text/markdown',
         },
         async () => ({

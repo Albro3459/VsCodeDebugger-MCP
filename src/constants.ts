@@ -1,6 +1,6 @@
 // VS Code 插件常量
 
-export const IPC_COMMAND_PREFIX = 'vscode-debugger-mcp:';
+export const IPC_COMMAND_PREFIX = 'mcp-debugger:';
 
 // IPC 命令 (插件到服务器)
 export const IPC_COMMAND_SET_BREAKPOINT = `${IPC_COMMAND_PREFIX}setBreakpoint`;
@@ -24,7 +24,7 @@ export const OUTPUT_CHANNEL_NAME = 'VSCode Debugger MCP';
 export const OUTPUT_CHANNEL_COORDINATOR = 'Debug MCP Server (Coordinator)';
 
 // 配置键
-export const CONFIG_SECTION_SERVER = 'vscode-debugger-mcp.server';
+export const CONFIG_SECTION_SERVER = 'mcp-debugger.server';
 export const CONFIG_KEY_MCP_PORT = 'port';
 export const CONFIG_KEY_AUTO_START = 'autoStart';
 
@@ -46,9 +46,7 @@ export const IPC_STATUS_INTERRUPTED = 'interrupted';
 export const UI_TEXT_INPUT_NEW_PORT = 'Enter new port';
 
 // MCP 客户端配置
-export const MCP_CONFIG_SERVER_KEY = 'vscode-debugger-mcp';
+export const MCP_CONFIG_SERVER_KEY = 'mcp-debugger';
 export const MCP_CONFIG_URL_TEMPLATE = 'http://127.0.0.1:{port}/sse';
 // 服务器启动消息
 export const MCP_SERVER_LISTENING_MESSAGE_PREFIX = 'MCP Server listening on port ';
-// 自动启动配置键 (用于 Global State)
-export const LEGACY_AUTO_START_KEY = 'mcpServer.autoStart';

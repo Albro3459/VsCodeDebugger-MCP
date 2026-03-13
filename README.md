@@ -1,7 +1,7 @@
 # VSCode Debugger MCP
 
 [![中文](https://img.shields.io/badge/Language-中文-blue)](README.cn.md)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.vscode-debugger-mcp?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.vscode-debugger-mcp)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/Albro3459.mcp-debugger?style=flat-square&amp;label=VS%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=Albro3459.mcp-debugger)
 
 ![demo_en](assets/demo_en.gif)
 
@@ -53,7 +53,7 @@ Before each use, check if RooCode is connected to the MCP server. ![connect_en](
 The MCP server must already be running before you start your agent.
 
 ```toml
-[mcp_servers.vscode-debugger-mcp]
+[mcp_servers.mcp-debugger]
 url = "http://127.0.0.1:6009/mcp"
 ```
 
@@ -63,8 +63,8 @@ Important: do **not** use `localhost`; use `127.0.0.1`.
 
 This extension contributes the following VS Code settings:
 
-*   `vscode-debugger-mcp.server.port` (number): The port number the MCP server listens on. Defaults to `6009`.
-*   `vscode-debugger-mcp.server.autoStart` (boolean): Whether to automatically start the MCP server when VS Code launches. Defaults to `true`.
+*   `mcp-debugger.server.port` (number): The port number the MCP server listens on. Defaults to `6009`.
+*   `mcp-debugger.server.autoStart` (boolean): Whether to automatically start the MCP server when VS Code launches. Defaults to `true`.
 
 When you use the status bar menu to change the port or auto-start behavior, the extension updates workspace settings when a workspace is open, otherwise it updates your global user settings.
 
@@ -72,8 +72,8 @@ Example:
 
 ```json
 {
-  "vscode-debugger-mcp.server.port": 6009,
-  "vscode-debugger-mcp.server.autoStart": true
+  "mcp-debugger.server.port": 6009,
+  "mcp-debugger.server.autoStart": true
 }
 ```
 
