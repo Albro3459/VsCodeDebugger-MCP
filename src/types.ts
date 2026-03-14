@@ -126,7 +126,7 @@ export interface StopEventData {
 }
 
 export type StartDebuggingResponsePayload =
-  | { status: "running"; message: string; session_id?: string; session_ids?: string[] }
+  | { status: "running"; message: string; session_ids?: string[] }
   | { status: "stopped"; data: StopEventData }
   | { status: "completed"; message: string }
   | { status: "error"; message: string }

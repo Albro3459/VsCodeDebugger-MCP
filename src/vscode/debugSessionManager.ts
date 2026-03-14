@@ -229,7 +229,7 @@ export class DebugSessionManager {
             const response: StartDebuggingResponsePayload = {
                 status: 'running',
                 message: '调试会话已启动并立即返回。对于 watch 或长期运行服务，请通过应用健康检查验证状态，而不是持续等待调试停止事件。',
-                ...(responseSessionIds.length > 0 ? { session_id: responseSessionIds[0], session_ids: responseSessionIds } : {})
+                ...(responseSessionIds.length > 0 ? { session_ids: responseSessionIds } : {})
             };
             return response;
         } catch (error: any) {

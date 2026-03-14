@@ -21,5 +21,4 @@ Important:
 - In those cases, do not wait indefinitely. Validate readiness with app health checks/ping instead.
 
 Output notes:
-- `session_id`: Primary started session ID when available.
 - `session_ids`: All newly discovered started session IDs (useful for compound launches).
