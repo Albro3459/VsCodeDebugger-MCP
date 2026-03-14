@@ -19,3 +19,6 @@ Optional args:
 Important:
 - For watch configs or long-running servers, the session may never stop on its own.
 - In those cases, do not wait indefinitely. Validate readiness with app health checks/ping instead.
+
+Output notes:
+- `session_ids`: All newly discovered started session IDs (useful for compound launches).

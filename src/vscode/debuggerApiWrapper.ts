@@ -5,6 +5,7 @@ import {
     RemoveBreakpointParams,
     SetBreakpointParams,
     StartDebuggingResponsePayload,
+    StopDebuggingResult,
     StopEventData, // 保留，因为 DebugSessionManager 可能需要
     VariableInfo, // 保留，因为 DebugSessionManager 可能需要
     StepExecutionResult // 导入 StepExecutionResult
@@ -140,16 +141,16 @@ export class DebuggerApiWrapper {
      * @param sessionId Optional ID of the session to stop. If omitted, stops the active session.
      * @returns Promise resolving to an object indicating success or failure.
      */
-    public async stopDebugging(sessionId?: string): Promise<{ status: string; message?: string }> {
+    public async stopDebugging(sessionId?: string): Promise<StopDebuggingResult> {
         try {
-            // DebugSessionManager.stopDebugging 是同步的，但我们封装成异步保持一致性
-            this.debugSessionManager.stopDebugging(sessionId);
-            // stopDebugging API 本身不直接返回成功/失败，我们假设命令已发送
-            // 实际的终止由 onDidTerminateDebugSession 事件处理
-            return { status: Constants.IPC_STATUS_SUCCESS, message: '停止调试命令已发送。' };
+            return await this.debugSessionManager.stopDebugging(sessionId);
         } catch (error: any) {
             console.error(`[DebuggerApiWrapper] Error stopping debug session ${sessionId || '(active)'}:`, error);
-            return { status: Constants.IPC_STATUS_ERROR, message: `停止调试会话时出错: ${error.message}` };
+            return {
+                status: Constants.IPC_STATUS_ERROR,
+                message: `停止调试会话时出错: ${error.message}`,
+                requested_session_ids: sessionId ? [sessionId] : []
+            };
         }
     }
 }

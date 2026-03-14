@@ -25,7 +25,7 @@ const StartDebuggingOutputSchema = z.object({
     status: z.enum(["stopped", "completed", "error", "timeout", "interrupted", "running"]), // Add 'running' if applicable
     data: z.any().optional().describe("Contains details of the stop event when status is 'stopped'."),
     message: z.string().optional().describe("Contains descriptive information about the result. For status 'running', this confirms immediate non-blocking return."),
-    session_id: z.string().optional().describe("The ID of the successfully started debug session"), // Add session_id if returned by plugin
+    session_ids: z.array(z.string()).optional().describe("All newly discovered session IDs started by this launch request."),
 }).describe("Execution result of the start debugging tool");
 
 

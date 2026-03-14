@@ -7,3 +7,7 @@ Required args:
 
 Optional args:
 - `session_id`
+
+Behavior notes:
+- If `thread_id` is invalid/stale for the target session, the tool returns `error` immediately.
+- It does not wait for timeout when the requested thread is not present.

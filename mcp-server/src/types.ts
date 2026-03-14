@@ -107,7 +107,7 @@ export interface StopEventData {
 }
 
 export type StartDebuggingResponsePayload =
-  | { status: "running"; message: string; session_id?: string }
+  | { status: "running"; message: string; session_ids?: string[] }
   | { status: "stopped"; data: StopEventData }
   | { status: "completed"; message: string }
   | { status: "error"; message: string }
@@ -143,6 +143,15 @@ export type StepExecutionResult =
 
 export interface StopDebuggingPayload {
   sessionId?: string;
+}
+
+export interface StopDebuggingResult {
+  status: typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR;
+  message?: string;
+  requested_session_ids?: string[];
+  stopped_session_ids?: string[];
+  still_running_session_ids?: string[];
+  terminated_terminal_names?: string[];
 }
 
 // 注意：不再需要 PluginRequestData 和 PluginResponseData 联合类型，

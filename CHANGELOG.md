@@ -1,5 +1,21 @@
 # Change Log
 
+## 1.2.4
+
+* Improved `stop_debugging` behavior and observability:
+    * Stops child debug sessions when applicable (compound/parent-child launches).
+    * Performs stop verification and reports structured outcome fields:
+        * `requested_session_ids`
+        * `stopped_session_ids`
+        * `still_running_session_ids`
+        * `terminated_terminal_names`
+    * Returns explicit partial-stop state instead of optimistic "command sent" messaging.
+* Improved `continue_debugging` and `step_execution` reliability:
+    * Validates `thread_id` against live session threads.
+    * Returns fast error for invalid/stale thread IDs instead of waiting for timeout.
+* Improved `start_debugging` launch observability:
+    * Added `session_ids` output for multi-session/compound launch tracking.
+
 ## 1.2.2 - 1.2.3
 
 * Updated `start_debugging` to return immediately by default after launch (non-blocking), so long-running/watch/server configs do not leave agent calls stuck.

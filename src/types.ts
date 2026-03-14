@@ -80,6 +80,15 @@ export interface StopDebuggingPayload {
   sessionId?: string;
 }
 
+export interface StopDebuggingResult {
+  status: typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR;
+  message?: string;
+  requested_session_ids?: string[];
+  stopped_session_ids?: string[];
+  still_running_session_ids?: string[];
+  terminated_terminal_names?: string[];
+}
+
 export interface VariableInfo {
   name: string;
   value: string;
@@ -117,7 +126,7 @@ export interface StopEventData {
 }
 
 export type StartDebuggingResponsePayload =
-  | { status: "running"; message: string; session_id?: string }
+  | { status: "running"; message: string; session_ids?: string[] }
   | { status: "stopped"; data: StopEventData }
   | { status: "completed"; message: string }
   | { status: "error"; message: string }
