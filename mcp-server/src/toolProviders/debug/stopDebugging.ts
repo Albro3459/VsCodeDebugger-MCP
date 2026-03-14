@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { sendRequestToPlugin, PluginResponse } from '../../pluginCommunicator';
 import * as Constants from '../../constants';
+import type { StopDebuggingResult } from '../../types';
 import { logger } from '../../config'; // 导入 logger
 import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
@@ -18,6 +19,10 @@ export type StopDebuggingArgs = z.infer<typeof stopDebuggingSchema>;
 const StopDebuggingOutputSchema = z.object({
     status: z.enum([Constants.IPC_STATUS_SUCCESS, Constants.IPC_STATUS_ERROR]),
     message: z.string().optional().describe("A message describing the result of the operation, may be included on success or failure"),
+    requested_session_ids: z.array(z.string()).optional().describe("Session IDs that were targeted by this stop operation."),
+    stopped_session_ids: z.array(z.string()).optional().describe("Session IDs that terminated before timeout."),
+    still_running_session_ids: z.array(z.string()).optional().describe("Session IDs that still appear active after stop attempt."),
+    terminated_terminal_names: z.array(z.string()).optional().describe("Integrated terminal names closed as part of stop cleanup."),
 }).describe("Execution result of the stop debugging tool");
 
 
@@ -38,7 +43,7 @@ export const stopDebuggingTool = {
 
         try {
             logger.debug(`[MCP Tool - ${toolName}] Sending request to plugin:`, { sessionId }); // Log payload being sent
-            const response: PluginResponse = await sendRequestToPlugin({
+            const response: PluginResponse<StopDebuggingResult> = await sendRequestToPlugin({
                  command: Constants.IPC_COMMAND_STOP_DEBUGGING,
                  payload: { sessionId } // Keep plugin payload camelCase
             });
@@ -58,15 +63,28 @@ export const stopDebuggingTool = {
             logger.debug(`[MCP Tool - ${toolName}] Received response from plugin:`, response); // 使用 logger
 
             if (response.status === Constants.IPC_STATUS_SUCCESS) { // Use Constants.*
-                const successMessage = response.payload?.message || 'Request to stop debug session successfully sent.';
-                logger.info(`[MCP Tool - ${toolName}] Success: ${successMessage}`); // 使用 logger
-                // Return success status based on schema
-                return { status: Constants.IPC_STATUS_SUCCESS, message: successMessage };
+                const result = StopDebuggingOutputSchema.parse({
+                    status: response.payload?.status || Constants.IPC_STATUS_SUCCESS,
+                    message: response.payload?.message || 'Stop request completed.',
+                    requested_session_ids: response.payload?.requested_session_ids,
+                    stopped_session_ids: response.payload?.stopped_session_ids,
+                    still_running_session_ids: response.payload?.still_running_session_ids,
+                    terminated_terminal_names: response.payload?.terminated_terminal_names
+                });
+                logger.info(`[MCP Tool - ${toolName}] Success: ${result.message || 'Stop request completed.'}`); // 使用 logger
+                return result;
             } else { // Handles IPC_STATUS_ERROR or any other non-success status from plugin
-                const errorMessage = response.error?.message || 'Plugin returned an unknown error or non-success status while stopping debugging.';
+                const errorMessage = response.error?.message || response.payload?.message || 'Plugin returned an unknown error or non-success status while stopping debugging.';
                 logger.error(`[MCP Tool - ${toolName}] Plugin reported error or non-success status: ${errorMessage}`); // 使用 logger
                 // Return error status based on schema
-                return { status: Constants.IPC_STATUS_ERROR, message: errorMessage };
+                return StopDebuggingOutputSchema.parse({
+                    status: Constants.IPC_STATUS_ERROR,
+                    message: errorMessage,
+                    requested_session_ids: response.payload?.requested_session_ids,
+                    stopped_session_ids: response.payload?.stopped_session_ids,
+                    still_running_session_ids: response.payload?.still_running_session_ids,
+                    terminated_terminal_names: response.payload?.terminated_terminal_names
+                });
             }
         } catch (error: any) { // Catch communication errors or errors in sendRequestToPlugin
             const commErrorMessage = error?.message || 'Failed to communicate with plugin or an unknown error occurred.';

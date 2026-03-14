@@ -168,12 +168,10 @@ export class IpcHandler implements vscode.Disposable { // 实现 Disposable 接�
                         // 调用 DebuggerApiWrapper 中的 stopDebugging 方法
                         const stopResult = await this.debuggerApiWrapper.stopDebugging(sessionId); // 传递 sessionId
                         console.log('[Plugin IPC Handler] stopDebugging result:', stopResult);
-                        // stopDebugging 返回 { status: string; message?: string }
-                        // sendResponseToServer 会根据 status 决定最终的 IPC status 和 payload/error
                         this.sendResponseToServer(
                             requestId,
-                            stopResult.status as typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR, // 添加类型断言以匹配函数签名
-                            stopResult.message ? { message: stopResult.message } : undefined,
+                            stopResult.status as typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR,
+                            stopResult,
                             stopResult.status === Constants.IPC_STATUS_ERROR ? { message: stopResult.message || '停止调试时发生未知错误' } : undefined
                         );
                     } catch (error: any) {

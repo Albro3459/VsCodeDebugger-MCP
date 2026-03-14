@@ -5,6 +5,7 @@ import {
     ContinueDebuggingParams, 
     StartDebuggingResponsePayload, 
     StopEventData, 
+    StopDebuggingResult,
     StepExecutionParams, 
     StepExecutionResult 
 } from '../types';
@@ -75,7 +76,9 @@ export class DebugSessionManager {
 
                             if (requestEntry) {
                                 const [requestId, pendingReqGeneric] = requestEntry;
-                                if (pendingReqGeneric.isResolved) return;
+                                if (pendingReqGeneric.isResolved) {
+                                    return;
+                                }
 
                                 try {
                                     const stopEventData = await this.debugStateProvider.buildStopEventData(session, message.body);
@@ -105,7 +108,9 @@ export class DebugSessionManager {
                         
                         if (requestEntry) {
                             const [requestId, pendingReqGenericUntyped] = requestEntry;
-                            if (pendingReqGenericUntyped.isResolved) return;
+                            if (pendingReqGenericUntyped.isResolved) {
+                                return;
+                            }
 
                             // Only PendingStartRequest has isExtensionHostCase and initialSessionId
                             if (requestId.startsWith('start-')) {
@@ -150,7 +155,9 @@ export class DebugSessionManager {
 
                         if (requestEntry) {
                             const [requestId, pendingReqGenericUntyped] = requestEntry;
-                             if (pendingReqGenericUntyped.isResolved) return;
+                             if (pendingReqGenericUntyped.isResolved) {
+                                 return;
+                             }
 
                             if (requestId.startsWith('start-')) {
                                 const pendingStartReq = pendingReqGenericUntyped as PendingRequest;
@@ -208,16 +215,21 @@ export class DebugSessionManager {
         }
 
         try {
+            const sessionIdsBeforeStart = this.collectKnownSessionIds();
             const success = await vscode.debug.startDebugging(folder, configurationName, { noDebug });
             if (!success) {
                 return { status: IPC_STATUS_ERROR, message: 'VS Code 报告无法启动调试会话 (startDebugging 返回 false)。' };
             }
 
+            const startedSessionIds = await this.waitForNewSessionIds(sessionIdsBeforeStart, 1500);
             const activeSessionId = vscode.debug.activeDebugSession?.id;
+            const responseSessionIds = startedSessionIds.length > 0
+                ? startedSessionIds
+                : (activeSessionId ? [activeSessionId] : []);
             const response: StartDebuggingResponsePayload = {
                 status: 'running',
                 message: '调试会话已启动并立即返回。对于 watch 或长期运行服务，请通过应用健康检查验证状态，而不是持续等待调试停止事件。',
-                ...(activeSessionId ? { session_id: activeSessionId } : {})
+                ...(responseSessionIds.length > 0 ? { session_id: responseSessionIds[0], session_ids: responseSessionIds } : {})
             };
             return response;
         } catch (error: any) {
@@ -445,6 +457,15 @@ export class DebugSessionManager {
                 return;
             }
 
+            const availableThreads = await this.getThreadIds(session);
+            if (availableThreads && !availableThreads.includes(threadId)) {
+                resolve({
+                    status: IPC_STATUS_ERROR,
+                    message: `线程 ${threadId} 在会话 ${currentSessionId} 中不存在。当前线程: ${availableThreads.join(', ') || '无'}。`
+                });
+                return;
+            }
+
             const timeout = 60000; // TODO: Make configurable
             const timeoutHandle = setTimeout(() => {
                 this.resolveContinueRequestInternal(requestId, { status: IPC_STATUS_TIMEOUT, message: `等待调试器再次停止或结束超时 (${timeout}ms)。` });
@@ -486,6 +507,15 @@ export class DebugSessionManager {
             const session = this.activeSessions.get(activeSessionId);
             if (!session) {
                 reject({ status: IPC_STATUS_ERROR, message: `未找到匹配的活动调试会话 ID: ${activeSessionId}` } as StepExecutionResult);
+                return;
+            }
+
+            const availableThreads = await this.getThreadIds(session);
+            if (availableThreads && !availableThreads.includes(threadId)) {
+                reject({
+                    status: IPC_STATUS_ERROR,
+                    message: `线程 ${threadId} 在会话 ${activeSessionId} 中不存在。当前线程: ${availableThreads.join(', ') || '无'}。`
+                } as StepExecutionResult);
                 return;
             }
 
@@ -594,7 +624,9 @@ export class DebugSessionManager {
             for (const entry of this.pendingStartRequests.entries()) {
                 const req = entry[1];
                 if (!req.isResolved) {
-                    if (req.currentMonitoringSessionId === eventSessionId) return entry;
+                    if (req.currentMonitoringSessionId === eventSessionId) {
+                        return entry;
+                    }
                     // Special case for extensionHost parent session errors/exits before child is identified
                     if (checkInitialIdForStart && req.isExtensionHostCase && req.initialSessionId === eventSessionId && req.currentMonitoringSessionId === req.initialSessionId) {
                         return entry;
@@ -603,11 +635,15 @@ export class DebugSessionManager {
             }
             for (const entry of this.pendingContinueRequests.entries()) {
                 const req = entry[1];
-                if (req.currentMonitoringSessionId === eventSessionId && !req.isResolved) return entry;
+                if (req.currentMonitoringSessionId === eventSessionId && !req.isResolved) {
+                    return entry;
+                }
             }
             for (const entry of this.pendingStepRequests.entries()) {
                 const req = entry[1];
-                if (req.currentMonitoringSessionId === eventSessionId && !req.isResolved) return entry;
+                if (req.currentMonitoringSessionId === eventSessionId && !req.isResolved) {
+                    return entry;
+                }
             }
             return undefined;
         }
@@ -646,29 +682,219 @@ export class DebugSessionManager {
         });
     }
 
-    public stopDebugging(sessionId?: string): void {
-        let sessionToStop: vscode.DebugSession | undefined;
-        if (sessionId) {
-            sessionToStop = this.activeSessions.get(sessionId);
-            if (!sessionToStop) {
-                if (vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.id === sessionId) {
-                    sessionToStop = vscode.debug.activeDebugSession;
-                } else {
-                    console.warn(`[DSM] stopDebugging: Session ${sessionId} not found in activeSessions or as activeDebugSession.`);
+    public async stopDebugging(sessionId?: string): Promise<StopDebuggingResult> {
+        const targetSessions = this.resolveStopTargets(sessionId);
+        const requestedSessionIds = targetSessions.map(session => session.id);
+
+        if (sessionId && targetSessions.length === 0) {
+            const message = `未找到要停止的调试会话: ${sessionId}`;
+            console.warn(`[DSM] ${message}`);
+            return {
+                status: IPC_STATUS_ERROR,
+                message,
+                requested_session_ids: [sessionId],
+                stopped_session_ids: [],
+                still_running_session_ids: [sessionId]
+            };
+        }
+
+        if (!sessionId && targetSessions.length === 0) {
+            return {
+                status: IPC_STATUS_SUCCESS,
+                message: '当前没有活动的调试会话。',
+                requested_session_ids: [],
+                stopped_session_ids: [],
+                still_running_session_ids: []
+            };
+        }
+
+        const terminalNames = this.terminateRelatedIntegratedTerminals(targetSessions);
+        const stopErrors: string[] = [];
+
+        for (const session of targetSessions) {
+            try {
+                console.log(`[DSM] Requesting stop for debug session: ${session.id} (name: ${session.name})`);
+                await vscode.debug.stopDebugging(session);
+            } catch (error: any) {
+                const message = `停止会话 ${session.id} 失败: ${error?.message || error}`;
+                console.error(`[DSM] ${message}`);
+                stopErrors.push(message);
+            }
+        }
+
+        const stillRunningSessionIds = await this.waitForSessionsToTerminate(requestedSessionIds, 4000);
+        const stoppedSessionIds = requestedSessionIds.filter(id => !stillRunningSessionIds.includes(id));
+
+        const status = stopErrors.length === 0 && stillRunningSessionIds.length === 0
+            ? IPC_STATUS_SUCCESS
+            : IPC_STATUS_ERROR;
+        const details: string[] = [];
+        details.push(`已请求停止 ${requestedSessionIds.length} 个会话`);
+        if (stoppedSessionIds.length > 0) {
+            details.push(`已停止 ${stoppedSessionIds.length} 个`);
+        }
+        if (stillRunningSessionIds.length > 0) {
+            details.push(`仍在运行 ${stillRunningSessionIds.length} 个`);
+        }
+        if (terminalNames.length > 0) {
+            details.push(`已关闭关联终端 ${terminalNames.length} 个`);
+        }
+        if (stopErrors.length > 0) {
+            details.push(`错误 ${stopErrors.length} 个`);
+        }
+
+        return {
+            status,
+            message: details.join('，') + '。',
+            requested_session_ids: requestedSessionIds,
+            stopped_session_ids: stoppedSessionIds,
+            still_running_session_ids: stillRunningSessionIds,
+            terminated_terminal_names: terminalNames
+        };
+    }
+
+    private collectKnownSessionIds(): Set<string> {
+        const knownSessionIds = new Set<string>();
+        for (const sessionId of this.activeSessions.keys()) {
+            knownSessionIds.add(sessionId);
+        }
+        if (vscode.debug.activeDebugSession?.id) {
+            knownSessionIds.add(vscode.debug.activeDebugSession.id);
+        }
+        return knownSessionIds;
+    }
+
+    private async waitForNewSessionIds(knownSessionIds: Set<string>, timeoutMs: number): Promise<string[]> {
+        const startTime = Date.now();
+        while (Date.now() - startTime < timeoutMs) {
+            const newSessionIds: string[] = [];
+            for (const session of this.activeSessions.values()) {
+                if (!knownSessionIds.has(session.id)) {
+                    newSessionIds.push(session.id);
                 }
             }
-        } else {
-            sessionToStop = vscode.debug.activeDebugSession;
+
+            if (newSessionIds.length > 0) {
+                return newSessionIds;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
-    
-        if (sessionToStop) {
-            console.log(`[DSM] Requesting stop for debug session: ${sessionToStop.id} (name: ${sessionToStop.name})`);
-            vscode.debug.stopDebugging(sessionToStop).then(
-                () => console.log(`[DSM] Stop request for ${sessionToStop!.id} completed.`),
-                (err) => console.error(`[DSM] Error stopping session ${sessionToStop!.id}:`, err)
-            );
-        } else {
-            console.log("[DSM] stopDebugging: No active debug session to stop, or specified session not found.");
+        return [];
+    }
+
+    private resolveStopTargets(sessionId?: string): vscode.DebugSession[] {
+        const sessions = Array.from(this.activeSessions.values());
+        if (sessionId) {
+            const root = sessions.find(session => session.id === sessionId)
+                ?? (vscode.debug.activeDebugSession?.id === sessionId ? vscode.debug.activeDebugSession : undefined);
+            if (!root) {
+                return [];
+            }
+
+            const visited = new Set<string>();
+            const queue: vscode.DebugSession[] = [root];
+            const result: vscode.DebugSession[] = [];
+            while (queue.length > 0) {
+                const current = queue.shift()!;
+                if (visited.has(current.id)) {
+                    continue;
+                }
+                visited.add(current.id);
+                result.push(current);
+                const children = sessions.filter(session => session.parentSession?.id === current.id);
+                queue.push(...children);
+            }
+            return result.sort((a, b) => this.sessionDepth(b) - this.sessionDepth(a));
+        }
+        return sessions.sort((a, b) => this.sessionDepth(b) - this.sessionDepth(a));
+    }
+
+    private sessionDepth(session: vscode.DebugSession): number {
+        let depth = 0;
+        let current = session.parentSession;
+        while (current) {
+            depth += 1;
+            current = current.parentSession;
+        }
+        return depth;
+    }
+
+    private async waitForSessionsToTerminate(sessionIds: string[], timeoutMs: number): Promise<string[]> {
+        if (sessionIds.length === 0) {
+            return [];
+        }
+
+        const pending = new Set(sessionIds);
+        const startTime = Date.now();
+        while (pending.size > 0 && Date.now() - startTime < timeoutMs) {
+            for (const sessionId of Array.from(pending)) {
+                if (!this.activeSessions.has(sessionId)) {
+                    pending.delete(sessionId);
+                }
+            }
+            if (pending.size > 0) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        return Array.from(pending);
+    }
+
+    private terminateRelatedIntegratedTerminals(targetSessions: vscode.DebugSession[]): string[] {
+        const candidateLabels = new Set<string>();
+        for (const session of targetSessions) {
+            const consoleType = String(session.configuration.console || '');
+            if (consoleType.toLowerCase() !== 'integratedterminal') {
+                continue;
+            }
+
+            const labels = [
+                session.name,
+                session.configuration.name,
+                String(session.configuration.runtimeExecutable || ''),
+                String(session.configuration.command || '')
+            ];
+
+            if (Array.isArray(session.configuration.runtimeArgs)) {
+                labels.push(session.configuration.runtimeArgs.join(' '));
+                labels.push(...session.configuration.runtimeArgs.map(arg => String(arg)));
+            }
+
+            for (const label of labels) {
+                const normalized = label.trim().toLowerCase();
+                if (normalized.length > 2) {
+                    candidateLabels.add(normalized);
+                }
+            }
+        }
+
+        if (candidateLabels.size === 0) {
+            return [];
+        }
+
+        const terminatedTerminalNames: string[] = [];
+        for (const terminal of vscode.window.terminals) {
+            const terminalName = terminal.name.toLowerCase();
+            const matched = Array.from(candidateLabels).some(label => terminalName.includes(label));
+            if (matched) {
+                terminatedTerminalNames.push(terminal.name);
+                terminal.dispose();
+            }
+        }
+        return terminatedTerminalNames;
+    }
+
+    private async getThreadIds(session: vscode.DebugSession): Promise<number[] | undefined> {
+        try {
+            const response = await session.customRequest('threads');
+            if (!response || !Array.isArray(response.threads)) {
+                return undefined;
+            }
+            return response.threads
+                .map((thread: any) => thread?.id)
+                .filter((id: unknown): id is number => typeof id === 'number');
+        } catch (error) {
+            console.warn(`[DSM] Failed to query threads for session ${session.id}:`, error);
+            return undefined;
         }
     }
 }
