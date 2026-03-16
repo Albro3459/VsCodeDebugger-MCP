@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.2.5
+
+* Added MIT license.
+
 ## 1.2.4
 
 * Improved `stop_debugging` behavior and observability:

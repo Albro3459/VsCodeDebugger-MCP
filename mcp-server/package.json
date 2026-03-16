@@ -1,6 +1,6 @@
 {
   "name": "debug-mcp-server",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "HTTP/SSE MCP server for VS Code debugger integration",
   "main": "dist/server.js",
   "scripts": {
