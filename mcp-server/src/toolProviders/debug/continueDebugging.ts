@@ -22,7 +22,7 @@ const AsyncDebugResultSchema = z.object({
 
 
 export const continueDebuggingTool = {
-    name: "continue_debugging", // 恢复使用字符串名称，因为常量不存在
+    name: Constants.TOOL_CONTINUE_DEBUGGING,
     description: "When the debugger is paused, this command resumes execution of the specified thread and waits for the next pause or termination. If session_id is omitted, the active session will be attempted.",
     inputSchema: ContinueDebuggingParamsSchema,
     outputSchema: AsyncDebugResultSchema,

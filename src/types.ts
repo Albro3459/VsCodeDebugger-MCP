@@ -16,7 +16,7 @@ export interface SetBreakpointParams {
 }
 
 export interface RemoveBreakpointParams {
-  breakpoint_id?: number;
+  breakpoint_id?: string | number;
   location?: {
     file_path: string; // 插件端接收到时应已是绝对路径
     line_number: number;
@@ -98,6 +98,13 @@ export interface VariableInfo {
   memory_reference?: string;
 }
 
+export interface ScopeInfo {
+  name: string;
+  expensive: boolean;
+  variables_reference: number;
+  variables?: VariableInfo[] | null;
+}
+
 export interface StackFrameInfo {
   frame_id: number;
   function_name: string;
@@ -122,7 +129,37 @@ export interface StopEventData {
     scope_name: string;
     variables: VariableInfo[];
   } | null;
+  top_frame_scopes?: ScopeInfo[] | null;
   hit_breakpoint_ids?: number[] | null;
+}
+
+export interface DebugThreadState {
+  thread_id: number;
+  name: string;
+  is_stopped: boolean;
+  stop_event_data?: StopEventData | null;
+}
+
+export interface DebugSessionState {
+  session_id: string;
+  name: string;
+  type: string;
+  request: string;
+  parent_session_id?: string | null;
+  is_active: boolean;
+  is_paused: boolean;
+  paused_thread_id?: number | null;
+  threads: DebugThreadState[];
+}
+
+export interface GetDebugStateParams {
+  sessionId?: string;
+}
+
+export interface GetDebugStateResult {
+  status: typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR;
+  sessions?: DebugSessionState[];
+  message?: string;
 }
 
 export type StartDebuggingResponsePayload =
@@ -148,6 +185,7 @@ export type PluginRequestData =
   | PluginRequest<SetBreakpointParams> & { command: typeof Constants.IPC_COMMAND_SET_BREAKPOINT }
   | PluginRequest<undefined> & { command: typeof Constants.IPC_COMMAND_GET_BREAKPOINTS }
   | PluginRequest<RemoveBreakpointParams> & { command: typeof Constants.IPC_COMMAND_REMOVE_BREAKPOINT }
+  | PluginRequest<GetDebugStateParams> & { command: typeof Constants.IPC_COMMAND_GET_DEBUG_STATE }
   | PluginRequest<StartDebuggingRequestPayload> & { command: typeof Constants.IPC_COMMAND_START_DEBUGGING_REQUEST }
   | PluginRequest<ContinueDebuggingParams> & { command: typeof Constants.IPC_COMMAND_CONTINUE_DEBUGGING }
   | PluginRequest<StepExecutionParams> & { command: typeof Constants.IPC_COMMAND_STEP_EXECUTION }
@@ -158,6 +196,7 @@ export type PluginResponseData =
   | PluginResponse<SetBreakpointResponsePayload> & { status: typeof Constants.IPC_STATUS_SUCCESS }
   | PluginResponse<GetBreakpointsResponsePayload> & { status: typeof Constants.IPC_STATUS_SUCCESS }
   | PluginResponse<RemoveBreakpointResponsePayload> & { status: typeof Constants.IPC_STATUS_SUCCESS }
+  | PluginResponse<GetDebugStateResult> & { status: typeof Constants.IPC_STATUS_SUCCESS }
   | PluginResponse<StartDebuggingResponsePayload> & { status: typeof Constants.IPC_STATUS_SUCCESS }
   | PluginResponse<StepExecutionResult> & { status: typeof Constants.IPC_STATUS_SUCCESS }
   | PluginResponse<undefined, { message: string }> & { status: typeof Constants.IPC_STATUS_ERROR };

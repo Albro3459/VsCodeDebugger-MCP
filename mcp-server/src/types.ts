@@ -82,7 +82,15 @@ export interface VariableInfo {
   memory_reference?: string;
 }
 
+export interface ScopeInfo {
+  name: string;
+  expensive: boolean;
+  variables_reference: number;
+  variables?: VariableInfo[] | null;
+}
+
 export interface StopEventData {
+  session_id?: string;
   timestamp: string; // ISO 8601 UTC
   reason: string; // "breakpoint", "exception", "step", etc.
   thread_id: number;
@@ -103,7 +111,37 @@ export interface StopEventData {
     scope_name: string;
     variables: VariableInfo[];
   } | null;
+  top_frame_scopes?: ScopeInfo[] | null;
   hit_breakpoint_ids?: number[] | null;
+}
+
+export interface DebugThreadState {
+  thread_id: number;
+  name: string;
+  is_stopped: boolean;
+  stop_event_data?: StopEventData | null;
+}
+
+export interface DebugSessionState {
+  session_id: string;
+  name: string;
+  type: string;
+  request: string;
+  parent_session_id?: string | null;
+  is_active: boolean;
+  is_paused: boolean;
+  paused_thread_id?: number | null;
+  threads: DebugThreadState[];
+}
+
+export interface GetDebugStateParams {
+  session_id?: string;
+}
+
+export interface GetDebugStateResult {
+  status: typeof Constants.IPC_STATUS_SUCCESS | typeof Constants.IPC_STATUS_ERROR;
+  sessions?: DebugSessionState[];
+  message?: string;
 }
 
 export type StartDebuggingResponsePayload =

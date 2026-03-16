@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { ProcessManager } from './processManager'; // 引入 ProcessManager
 import { DebuggerApiWrapper } from '../vscode/debuggerApiWrapper'; // 引入 DebuggerApiWrapper
 import {
+    GetDebugStateParams,
+    GetDebugStateResult,
     PluginRequest,
     PluginResponse,
     RemoveBreakpointParams,
@@ -90,6 +92,17 @@ export class IpcHandler implements vscode.Disposable { // 实现 Disposable 接�
                         breakpoints: breakpoints,
                     };
                     this.sendResponseToServer(requestId, Constants.IPC_STATUS_SUCCESS, responsePayload);
+                    break;
+
+                case Constants.IPC_COMMAND_GET_DEBUG_STATE:
+                    this.outputChannel.appendLine(`[IPC Handler] Handling '${Constants.IPC_COMMAND_GET_DEBUG_STATE}' request (ID: ${requestId})`);
+                    responsePayload = await this.debuggerApiWrapper.getDebugState((payload as GetDebugStateParams | undefined)?.sessionId);
+                    this.sendResponseToServer(
+                        requestId,
+                        responsePayload.status,
+                        responsePayload.status === Constants.IPC_STATUS_SUCCESS ? responsePayload : undefined,
+                        responsePayload.status === Constants.IPC_STATUS_ERROR ? { message: responsePayload.message || '读取调试状态失败' } : undefined
+                    );
                     break;
 
                 case Constants.IPC_COMMAND_REMOVE_BREAKPOINT:

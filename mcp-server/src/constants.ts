@@ -13,6 +13,7 @@ export const IPC_COMMAND_START_DEBUGGING_RESPONSE = `${IPC_COMMAND_PREFIX}startD
 export const IPC_COMMAND_CONTINUE_DEBUGGING = `${IPC_COMMAND_PREFIX}continue_debugging`;
 export const IPC_COMMAND_STEP_EXECUTION = `${IPC_COMMAND_PREFIX}stepExecution`;
 export const IPC_COMMAND_STOP_DEBUGGING = `${IPC_COMMAND_PREFIX}stopDebugging`;
+export const IPC_COMMAND_GET_DEBUG_STATE = `${IPC_COMMAND_PREFIX}getDebugState`;
 
 // IPC Message Types and Statuses
 export const IPC_MESSAGE_TYPE_REQUEST = 'request'; // 主要用于 communicator
@@ -26,6 +27,8 @@ export const TOOL_SET_BREAKPOINT = 'set_breakpoint';
 export const TOOL_GET_BREAKPOINTS = 'get_breakpoints';
 export const TOOL_REMOVE_BREAKPOINT = 'remove_breakpoint';
 export const TOOL_START_DEBUGGING = 'start_debugging';
+export const TOOL_CONTINUE_DEBUGGING = 'continue_debugging';
+export const TOOL_GET_DEBUG_STATE = 'get_debug_state';
 export const TOOL_NAME_STEP_EXECUTION = 'step_execution';
 export const TOOL_STOP_DEBUGGING = 'stop_debugging';
 // Server Startup Message (用于 IPC 协调)

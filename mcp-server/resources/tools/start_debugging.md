@@ -22,3 +22,4 @@ Important:
 
 Output notes:
 - `session_ids`: All newly discovered started session IDs (useful for compound launches).
+- For non-blocking flows, pass one of those `session_ids` to `get_debug_state` to check whether the session is paused and to retrieve a usable `thread_id`.

@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import { DebugStateProvider } from './debugStateProvider';
 import { 
     ContinueDebuggingParams, 
+    DebugSessionState,
+    GetDebugStateResult,
     StartDebuggingResponsePayload, 
     StopEventData, 
     StopDebuggingResult,
@@ -50,6 +52,7 @@ export class DebugSessionManager {
     private pendingStepRequests = new Map<string, PendingStepRequest>();
     private sessionListeners = new Map<string, vscode.Disposable[]>();
     private activeSessions = new Map<string, vscode.DebugSession>(); 
+    private pausedSessionState = new Map<string, StopEventData>();
     private requestCounter = 0;
 
     constructor(private debugStateProvider: DebugStateProvider) {
@@ -82,6 +85,7 @@ export class DebugSessionManager {
 
                                 try {
                                     const stopEventData = await this.debugStateProvider.buildStopEventData(session, message.body);
+                                    this.pausedSessionState.set(eventSessionId, stopEventData);
                                     console.log(`[DSM][Tracker][${requestId}] Stop event data built. Resolving promise.`);
                                     const stoppedResponse: StartDebuggingResponsePayload = { status: IPC_STATUS_STOPPED, data: stopEventData };
 
@@ -92,7 +96,13 @@ export class DebugSessionManager {
                                     this.resolveAnyRequestByType(requestId, errorResult, eventSessionId);
                                 }
                             } else {
-                                console.warn(`[DSM][Tracker] Received 'stopped' event for session ${eventSessionId}, but no pending request was actively monitoring this session ID.`);
+                                try {
+                                    const stopEventData = await this.debugStateProvider.buildStopEventData(session, message.body);
+                                    this.pausedSessionState.set(eventSessionId, stopEventData);
+                                    console.warn(`[DSM][Tracker] Received 'stopped' event for session ${eventSessionId} without a pending request. Cached stop state for later inspection.`);
+                                } catch (error: any) {
+                                    console.error(`[DSM][Tracker] Failed to cache stop state for session ${eventSessionId}:`, error);
+                                }
                             }
                         } else if (message.type === 'event' && message.event === 'terminated') {
                             // Terminated event is primarily handled by onDidTerminateDebugSession
@@ -132,6 +142,11 @@ export class DebugSessionManager {
                                 }
                             } else if (eventSessionId === (pendingReqGenericUntyped as PendingRequest | PendingStepRequest).currentMonitoringSessionId) {
                                 // For continue or step requests
+                                if (error.message.includes('connection closed')) {
+                                    console.warn(`[DSM][${requestId}] Connection closed for monitored session ${eventSessionId}. Waiting for terminate/completion event before resolving.`);
+                                    this.logPendingRequestsStateInternal(eventSessionId, requestId);
+                                    return;
+                                }
                                 console.error(`[DSM][${requestId}] Error/Closed event for CURRENTLY MONITORED session ${eventSessionId} (Continue/Step). Rejecting request.`);
                                 const errorResult: StartDebuggingResponsePayload = { status: IPC_STATUS_ERROR, message: `调试适配器错误 (监控会话 ${eventSessionId}): ${error.message}` };
                                 this.resolveAnyRequestByType(requestId, errorResult, eventSessionId);
@@ -176,6 +191,11 @@ export class DebugSessionManager {
                                      return;
                                 }
                             } else if (eventSessionId === (pendingReqGenericUntyped as PendingRequest | PendingStepRequest).currentMonitoringSessionId) {
+                                if (signal === 'SIGTERM' || signal === 'SIGINT' || code === 0 || code === undefined) {
+                                    console.warn(`[DSM][${requestId}] Monitored session ${eventSessionId} exited while continue/step was waiting. Allowing terminate/completion handling to resolve it.`);
+                                    this.logPendingRequestsStateInternal(eventSessionId, requestId);
+                                    return;
+                                }
                                 console.error(`[DSM][${requestId}] CURRENTLY MONITORED session ${eventSessionId} (Continue/Step) exited. Rejecting request.`);
                                 const errorResult: StartDebuggingResponsePayload = { status: IPC_STATUS_ERROR, message: `调试适配器意外退出 (监控会话 ${eventSessionId}, code: ${code}, signal: ${signal})` };
                                 this.resolveAnyRequestByType(requestId, errorResult, eventSessionId);
@@ -397,6 +417,7 @@ export class DebugSessionManager {
         const eventSessionId = session.id;
         console.log(`[DSM] Event: onDidTerminateDebugSession. Session: id=${eventSessionId}, type=${session.type}, name=${session.name}`);
         this.activeSessions.delete(eventSessionId);
+        this.pausedSessionState.delete(eventSessionId);
         this.cleanupSessionListeners(eventSessionId);
 
         // Check if this terminated session was an initial parent of an extensionHost debug
@@ -482,6 +503,7 @@ export class DebugSessionManager {
                 // isExtensionHostCase and initialSessionId are not typically relevant for continue
             };
             this.pendingContinueRequests.set(requestId, pendingRequest);
+            this.pausedSessionState.delete(currentSessionId);
             console.log(`[DSM][${requestId}] Created PendingRequest for continue. CurrentMonitoringSessionId: ${pendingRequest.currentMonitoringSessionId}`);
 
             try {
@@ -525,6 +547,7 @@ export class DebugSessionManager {
             }, timeoutMs);
 
             this.pendingStepRequests.set(requestId, { requestId, resolve, reject, timeoutHandle, threadId, stepType, currentMonitoringSessionId: activeSessionId, isResolved: false });
+            this.pausedSessionState.delete(activeSessionId);
             console.log(`[DSM][${requestId}] Created PendingStepRequest. CurrentMonitoringSessionId: ${activeSessionId}`);
             
             try {
@@ -751,6 +774,59 @@ export class DebugSessionManager {
             still_running_session_ids: stillRunningSessionIds,
             terminated_terminal_names: terminalNames
         };
+    }
+
+    public async getDebugState(sessionId?: string): Promise<GetDebugStateResult> {
+        const sessions = sessionId
+            ? this.resolveStopTargets(sessionId)
+            : Array.from(this.activeSessions.values());
+
+        if (sessionId && sessions.length === 0) {
+            return {
+                status: IPC_STATUS_ERROR,
+                message: `未找到活动的调试会话 ID: ${sessionId}`
+            };
+        }
+
+        try {
+            const sessionStates = await Promise.all(sessions.map(async (session): Promise<DebugSessionState> => {
+                const pausedState = this.pausedSessionState.get(session.id) || null;
+                let threadsResponse: any = { threads: [] };
+                try {
+                    threadsResponse = await session.customRequest('threads');
+                } catch (error) {
+                    console.warn(`[DSM] Failed to fetch threads for session ${session.id}:`, error);
+                }
+                const threads = Array.isArray(threadsResponse?.threads) ? threadsResponse.threads : [];
+
+                return {
+                    session_id: session.id,
+                    name: session.name,
+                    type: session.type,
+                    request: session.configuration.request,
+                    parent_session_id: session.parentSession?.id || null,
+                    is_active: true,
+                    is_paused: !!pausedState,
+                    paused_thread_id: pausedState?.thread_id ?? null,
+                    threads: threads.map((thread: any) => ({
+                        thread_id: thread.id,
+                        name: thread.name || `Thread ${thread.id}`,
+                        is_stopped: pausedState?.thread_id === thread.id || !!(pausedState?.all_threads_stopped),
+                        stop_event_data: pausedState?.thread_id === thread.id || pausedState?.all_threads_stopped ? pausedState : null,
+                    })),
+                };
+            }));
+
+            return {
+                status: IPC_STATUS_SUCCESS,
+                sessions: sessionStates,
+            };
+        } catch (error: any) {
+            return {
+                status: IPC_STATUS_ERROR,
+                message: `读取调试状态时出错: ${error.message}`,
+            };
+        }
     }
 
     private collectKnownSessionIds(): Set<string> {
