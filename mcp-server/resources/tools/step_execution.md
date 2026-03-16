@@ -8,3 +8,6 @@ Required args:
 
 Optional args:
 - `session_id`
+
+Tip:
+- If you need to discover the current paused `thread_id`, call `get_debug_state` first.

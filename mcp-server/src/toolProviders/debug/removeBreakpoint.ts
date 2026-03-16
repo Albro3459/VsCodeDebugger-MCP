@@ -14,7 +14,7 @@ const LocationSchema = z.object({
 });
 
 export const BaseRemoveBreakpointInputSchema = z.object({
-  breakpoint_id: z.number().int().positive().optional().describe('The unique ID of the breakpoint to remove.'),
+  breakpoint_id: z.union([z.string().min(1), z.number().int().positive()]).optional().describe('The unique ID of the breakpoint to remove.'),
   location: LocationSchema.optional().describe('Specifies the location of the breakpoint to remove.'),
   clear_all: z.boolean().optional().describe('If set to true, attempts to remove all breakpoints.'),
 });

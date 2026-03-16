@@ -129,6 +129,9 @@ export class McpServerManager implements vscode.Disposable {
                 case Constants.IPC_COMMAND_GET_BREAKPOINTS:
                     responsePayload = { breakpoints: this.debuggerApiWrapper.getBreakpoints(), timestamp: new Date().toISOString() };
                     break;
+                case Constants.IPC_COMMAND_GET_DEBUG_STATE:
+                    responsePayload = await this.debuggerApiWrapper.getDebugState(payload?.sessionId);
+                    break;
                 case Constants.IPC_COMMAND_REMOVE_BREAKPOINT:
                     responsePayload = await this.debuggerApiWrapper.removeBreakpoint(payload);
                     break;

@@ -12,6 +12,7 @@ export const IPC_COMMAND_START_DEBUGGING_RESPONSE = `${IPC_COMMAND_PREFIX}startD
 export const IPC_COMMAND_CONTINUE_DEBUGGING = `${IPC_COMMAND_PREFIX}continue_debugging`;
 export const IPC_COMMAND_STEP_EXECUTION = `${IPC_COMMAND_PREFIX}stepExecution`;
 export const IPC_COMMAND_STOP_DEBUGGING = `${IPC_COMMAND_PREFIX}stopDebugging`;
+export const IPC_COMMAND_GET_DEBUG_STATE = `${IPC_COMMAND_PREFIX}getDebugState`;
 
 // 状态栏文本
 export const STATUS_BAR_RUNNING_TEXT = '$(debug-start) Debug-MCP: Running';

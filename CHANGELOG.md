@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.2.6
+
+* Added `get_debug_state` for non-blocking debug inspection:
+    * Returns active sessions, paused state, paused thread IDs, and per-thread stop data.
+    * Surfaces top-frame scopes and variables such as `Local` and `Closure` when provided by the debug adapter.
+    * Lets agents launch with `stay_connected: false`, then inspect paused Jest or Node sessions later before calling `continue_debugging` or `step_execution`.
+* Improved stop-event handling in the VS Code extension:
+    * Paused stop data is now cached even when no pending `start_debugging`, `continue_debugging`, or `step_execution` request is waiting on that session.
+    * Cached stop state is cleared on continue, step, and session termination.
+* Updated README and MCP resources to document the recommended non-blocking breakpoint flow.
+
 ## 1.2.5
 
 * Added MIT license.

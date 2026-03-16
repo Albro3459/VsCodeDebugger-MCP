@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as Constants from '../constants';
 import {
     ContinueDebuggingParams, // 导入新类型
+    DebugSessionState,
+    GetDebugStateResult,
     RemoveBreakpointParams,
     SetBreakpointParams,
     StartDebuggingResponsePayload,
@@ -134,6 +136,10 @@ export class DebuggerApiWrapper {
             console.error("[DebuggerApiWrapper] Error retrieving debugger configurations:", error);
             return [];
         }
+    }
+
+    public async getDebugState(sessionId?: string): Promise<GetDebugStateResult> {
+        return this.debugSessionManager.getDebugState(sessionId);
     }
         /**
      * Stops the current active debug session or a specific session by ID.

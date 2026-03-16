@@ -19,7 +19,7 @@ The maintained fork is available at [Albro3459/VsCodeDebugger-MCP](https://githu
     *   **Debug Configurations**: Reads the project's `launch.json` file to get available debug configurations.
     *   **Breakpoint Management**: Set, remove, and query breakpoints, supporting regular breakpoints, conditional breakpoints, hit count breakpoints, and log points.
     *   **Execution Control**: Start debugging sessions (`launch` or `attach` mode), continue execution (`Continue`), step through code (`Step Over`, `Step Into`, `Step Out`), and stop debugging sessions.
-    *   **(Future)** Inspect variable values, traverse the call stack, evaluate expressions in specific contexts, etc.
+    *   **Paused-State Inspection**: Inspect active debug sessions after a non-blocking launch, including paused thread IDs, stop locations, call stacks, and top-frame scopes like `Local` and `Closure` with variables when the adapter provides them.
 *   **⚙️ MCP Server Management**:
     *   **Status Bar Integration**: Displays the real-time running status of the MCP server in the VS Code status bar (e.g., "Debug-MCP: Running" or "Debug-MCP: Stopped").
     *   **Convenient Control**: Click the status bar item to quickly start or stop the MCP server.
@@ -105,6 +105,19 @@ This extension provides one copy action with a format dropdown in the server act
 
 Important: use `127.0.0.1`, do **not** use `localhost`.
 
+### Recommended Agent Flow For Breakpoint Debugging
+
+1. Call `get_debugger_configurations`.
+2. Set breakpoints with `set_breakpoint`.
+3. Call `start_debugging`.
+    * Use the returned `session_ids` to track the launched session.
+    * Keep `stay_connected` set to `false` for agent-driven flows that should not block on a breakpoint.
+4. Call `get_debug_state`.
+    * Pass a `session_id` to inspect one session, or omit it to inspect all active sessions.
+    * If a session is paused, use the returned `paused_thread_id` or per-thread `thread_id` values for control operations.
+    * Read `stop_event_data.top_frame_scopes` to inspect `Local`, `Closure`, and similar top-frame scopes.
+5. Use `continue_debugging` or `step_execution` with the returned `session_id` and `thread_id`.
+
 ## 🔧 Extension Settings
 
 This extension contributes the following VS Code settings:
@@ -141,9 +154,6 @@ If you find errors, you can view the logs in the VS Code Output panel for easier
 
 ## 🔮 Future Development Plan
 
-*   **Variable and Scope Inspection**:
-    *   Implement `get_scopes` tool: Get scopes (e.g., local variables, global variables) for a specified stack frame.
-    *   Implement `get_variables` tool: Get a list of variables and their values for a specified scope or expandable variable.
 *   **Expression Evaluation**:
     *   Implement `evaluate_expression` tool: Evaluate an expression in the context of a specified stack frame.
 *   **Simultaneous HTTP SSE and Streamable Support**

@@ -20,10 +20,13 @@ export function registerTools() {
     logger.info('[Tool Registry] Starting tool registration...');
 
     // 注册 getDebuggerConfigurationsTool
-    server.tool(
+    server.registerTool(
         DebugTools.getDebuggerConfigurationsTool.name,
-        DebugTools.getDebuggerConfigurationsTool.description,
-        DebugTools.getDebuggerConfigurationsTool.inputSchema.shape,
+        {
+            description: DebugTools.getDebuggerConfigurationsTool.description,
+            inputSchema: DebugTools.getDebuggerConfigurationsTool.inputSchema,
+            outputSchema: DebugTools.getDebuggerConfigurationsTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getDebuggerConfigurationsTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName}`);
@@ -51,6 +54,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {
@@ -65,10 +69,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${DebugTools.getDebuggerConfigurationsTool.name}`);
 
     // 注册 setBreakpointTool
-    server.tool(
+    server.registerTool(
         DebugTools.setBreakpointTool.name,
-        DebugTools.setBreakpointTool.description,
-        DebugTools.setBreakpointTool.inputSchema.shape,
+        {
+            description: DebugTools.setBreakpointTool.description,
+            inputSchema: DebugTools.setBreakpointTool.inputSchema,
+            outputSchema: DebugTools.setBreakpointTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.setBreakpointTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
@@ -96,6 +103,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {
@@ -110,10 +118,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${DebugTools.setBreakpointTool.name}`);
 
     // 注册 getBreakpointsTool
-    server.tool(
+    server.registerTool(
         DebugTools.getBreakpointsTool.name,
-        DebugTools.getBreakpointsTool.description,
-        DebugTools.getBreakpointsTool.inputSchema.shape,
+        {
+            description: DebugTools.getBreakpointsTool.description,
+            inputSchema: DebugTools.getBreakpointsTool.inputSchema,
+            outputSchema: DebugTools.getBreakpointsTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.getBreakpointsTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName}`);
@@ -145,6 +156,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {
@@ -159,10 +171,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${DebugTools.getBreakpointsTool.name}`);
 
     // 注册 removeBreakpointTool
-    server.tool(
+    server.registerTool(
         DebugTools.removeBreakpointTool.name,
-        DebugTools.removeBreakpointTool.description,
-        DebugTools.removeBreakpointTool.baseinputSchema.shape,
+        {
+            description: DebugTools.removeBreakpointTool.description,
+            inputSchema: DebugTools.removeBreakpointTool.baseinputSchema,
+            outputSchema: DebugTools.removeBreakpointTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.removeBreakpointTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with validated args:`, args);
@@ -181,6 +196,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {
@@ -195,10 +211,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${DebugTools.removeBreakpointTool.name}`);
 
     // 注册 startDebuggingTool
-    server.tool(
+    server.registerTool(
         DebugTools.startDebuggingTool.name,
-        DebugTools.startDebuggingTool.description,
-        DebugTools.startDebuggingTool.inputSchema.shape,
+        {
+            description: DebugTools.startDebuggingTool.description,
+            inputSchema: DebugTools.startDebuggingTool.inputSchema,
+            outputSchema: DebugTools.startDebuggingTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = DebugTools.startDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
@@ -223,6 +242,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {
@@ -240,11 +260,55 @@ export function registerTools() {
     );
     logger.info(`[Tool Registry] Registered tool: ${DebugTools.startDebuggingTool.name}`);
 
+    server.registerTool(
+        DebugTools.getDebugStateTool.name,
+        {
+            description: DebugTools.getDebugStateTool.description,
+            inputSchema: DebugTools.getDebugStateTool.inputSchema,
+            outputSchema: DebugTools.getDebugStateTool.outputSchema,
+        },
+        async (args, extra: ToolRequestExtra) => {
+            const toolName = DebugTools.getDebugStateTool.name;
+            logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
+            try {
+                const result = await DebugTools.getDebugStateTool.execute(args, extra);
+                logger.info(`[MCP Server Adapter] Tool ${toolName} execution result status: ${result.status}`);
+
+                let responseContent = "";
+                let isError = result.status === Constants.IPC_STATUS_ERROR;
+
+                try {
+                    responseContent = JSON.stringify(result, null, 2);
+                } catch (jsonError) {
+                    logger.error(`[MCP Server Adapter] Failed to stringify debug state result for ${toolName}:`, jsonError);
+                    responseContent = `Error: Failed to serialize debug state result.`;
+                    isError = true;
+                }
+
+                return {
+                    content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
+                    isError,
+                };
+            } catch (error: any) {
+                logger.error(`[MCP Server Adapter] Unhandled error executing tool ${toolName}:`, error);
+                return {
+                    content: [{ type: 'text', text: `Internal server error executing tool ${toolName}: ${error.message}` }],
+                    isError: true,
+                };
+            }
+        }
+    );
+    logger.info(`[Tool Registry] Registered tool: ${DebugTools.getDebugStateTool.name}`);
+
     // 注册 continueDebuggingTool
-    server.tool(
+    server.registerTool(
         continueDebuggingTool.name,
-        continueDebuggingTool.description,
-        continueDebuggingTool.inputSchema.shape,
+        {
+            description: continueDebuggingTool.description,
+            inputSchema: continueDebuggingTool.inputSchema,
+            outputSchema: continueDebuggingTool.outputSchema,
+        },
         async (args, extra: ToolRequestExtra) => { // 添加 extra 类型
             const toolName = continueDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
@@ -267,6 +331,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: result.status === 'error' || result.status === 'timeout',
                 };
             } catch (error: any) {
@@ -281,10 +346,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${continueDebuggingTool.name}`);
 
     // 注册 stepExecutionTool
-    server.tool(
+    server.registerTool(
         stepExecutionTool.name,
-        stepExecutionTool.description,
-        stepExecutionTool.inputSchema.shape,
+        {
+            description: stepExecutionTool.description,
+            inputSchema: stepExecutionTool.inputSchema,
+            outputSchema: stepExecutionTool.outputSchema,
+        },
         async (args: StepExecutionParams, extra: ToolRequestExtra) => { // 修正 extra 类型
             const toolName = stepExecutionTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
@@ -307,6 +375,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: result.status === 'error' || result.status === 'timeout',
                 };
             } catch (error: any) {
@@ -321,10 +390,13 @@ export function registerTools() {
     logger.info(`[Tool Registry] Registered tool: ${stepExecutionTool.name}`);
 
     // 注册 stopDebuggingTool
-    server.tool(
+    server.registerTool(
         DebugTools.stopDebuggingTool.name,
-        DebugTools.stopDebuggingTool.description,
-        DebugTools.stopDebuggingTool.inputSchema.shape,
+        {
+            description: DebugTools.stopDebuggingTool.description,
+            inputSchema: DebugTools.stopDebuggingTool.inputSchema,
+            outputSchema: DebugTools.stopDebuggingTool.outputSchema,
+        },
         async (args: z.infer<typeof DebugTools.stopDebuggingTool.inputSchema>, extra: ToolRequestExtra) => { // 修正 extra 类型
             const toolName = DebugTools.stopDebuggingTool.name;
             logger.info(`[MCP Server Adapter] Executing tool: ${toolName} with args:`, args);
@@ -343,6 +415,7 @@ export function registerTools() {
 
                 return {
                     content: [{ type: 'text', text: responseContent }],
+                    structuredContent: result,
                     isError: isError,
                 };
             } catch (error: any) {

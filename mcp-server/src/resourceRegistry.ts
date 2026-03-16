@@ -16,9 +16,10 @@ const TOOL_NAMES = [
     Constants.TOOL_GET_DEBUGGER_CONFIGURATIONS,
     Constants.TOOL_SET_BREAKPOINT,
     Constants.TOOL_GET_BREAKPOINTS,
+    Constants.TOOL_GET_DEBUG_STATE,
     Constants.TOOL_REMOVE_BREAKPOINT,
     Constants.TOOL_START_DEBUGGING,
-    'continue_debugging',
+    Constants.TOOL_CONTINUE_DEBUGGING,
     Constants.TOOL_NAME_STEP_EXECUTION,
     Constants.TOOL_STOP_DEBUGGING,
 ] as const;
