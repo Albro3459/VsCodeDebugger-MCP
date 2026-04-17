@@ -60,6 +60,14 @@ export class DebugSessionManager {
         console.log("[DebugSessionManager] Initialized.");
     }
 
+    private shouldWaitForConnectionClosed(error: Error): boolean {
+        return error.message.includes('connection closed');
+    }
+
+    private shouldWaitForAdapterExit(code: number | undefined, signal: string | undefined): boolean {
+        return signal === 'SIGTERM' || signal === 'SIGINT' || code === 0 || code === undefined;
+    }
+
     private initializeDebugListeners(): void {
         vscode.debug.onDidStartDebugSession(session => this.handleDebugSessionStarted(session));
         vscode.debug.onDidTerminateDebugSession(session => this.handleDebugSessionTerminatedInternal(session));
@@ -134,6 +142,11 @@ export class DebugSessionManager {
                                     return;
                                 }
                                 if (eventSessionId === pendingStartReq.currentMonitoringSessionId) {
+                                    if (this.shouldWaitForConnectionClosed(error)) {
+                                        console.warn(`[DSM][${requestId}] Connection closed for monitored start session ${eventSessionId}. Waiting for terminate/completion event before resolving.`);
+                                        this.logPendingRequestsStateInternal(eventSessionId, requestId);
+                                        return;
+                                    }
                                     console.error(`[DSM][${requestId}] Error/Closed event for CURRENTLY MONITORED session ${eventSessionId}. Rejecting request.`);
                                     const errorResult: StartDebuggingResponsePayload = { status: IPC_STATUS_ERROR, message: `调试适配器错误 (监控会话 ${eventSessionId}): ${error.message}` };
                                     this.resolveRequestInternal(requestId, errorResult);
@@ -142,7 +155,7 @@ export class DebugSessionManager {
                                 }
                             } else if (eventSessionId === (pendingReqGenericUntyped as PendingRequest | PendingStepRequest).currentMonitoringSessionId) {
                                 // For continue or step requests
-                                if (error.message.includes('connection closed')) {
+                                if (this.shouldWaitForConnectionClosed(error)) {
                                     console.warn(`[DSM][${requestId}] Connection closed for monitored session ${eventSessionId}. Waiting for terminate/completion event before resolving.`);
                                     this.logPendingRequestsStateInternal(eventSessionId, requestId);
                                     return;
@@ -184,6 +197,11 @@ export class DebugSessionManager {
                                     return;
                                 }
                                 if (eventSessionId === pendingStartReq.currentMonitoringSessionId) {
+                                     if (this.shouldWaitForAdapterExit(code, signal)) {
+                                         console.warn(`[DSM][${requestId}] Monitored start session ${eventSessionId} exited cleanly. Waiting for terminate/completion handling to resolve it.`);
+                                         this.logPendingRequestsStateInternal(eventSessionId, requestId);
+                                         return;
+                                     }
                                      console.error(`[DSM][${requestId}] CURRENTLY MONITORED session ${eventSessionId} exited. Rejecting request.`);
                                      const errorResult: StartDebuggingResponsePayload = { status: IPC_STATUS_ERROR, message: `调试适配器意外退出 (监控会话 ${eventSessionId}, code: ${code}, signal: ${signal})` };
                                      this.resolveRequestInternal(requestId, errorResult);
@@ -191,7 +209,7 @@ export class DebugSessionManager {
                                      return;
                                 }
                             } else if (eventSessionId === (pendingReqGenericUntyped as PendingRequest | PendingStepRequest).currentMonitoringSessionId) {
-                                if (signal === 'SIGTERM' || signal === 'SIGINT' || code === 0 || code === undefined) {
+                                if (this.shouldWaitForAdapterExit(code, signal)) {
                                     console.warn(`[DSM][${requestId}] Monitored session ${eventSessionId} exited while continue/step was waiting. Allowing terminate/completion handling to resolve it.`);
                                     this.logPendingRequestsStateInternal(eventSessionId, requestId);
                                     return;
