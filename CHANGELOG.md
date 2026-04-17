@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.7
+
+* Fixed `start_debugging` in `stay_connected` mode for short-lived launch configs:
+    * Clean debug adapter shutdowns such as `connection closed`, exit code `0`, and normal terminate events are now treated as completion instead of false error results.
+    * This fixes cases where Jest-style test launch configs finished successfully but the MCP tool returned an adapter error.
+
 ## 1.2.6
 
 * Added `get_debug_state` for non-blocking debug inspection:

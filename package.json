@@ -2,7 +2,7 @@
   "name": "mcp-vscode-debugger",
   "displayName": "MCP VSCode Debugger",
   "description": "An MCP server combined with a VSCode plugin provides AI with the capability for breakpoint debugging within VSCode.",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "publisher": "Albro3459",
   "license": "MIT",
   "repository": {
@@ -73,7 +73,7 @@
     "@typescript-eslint/parser": "^8.57.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "^3.9.0",
     "eslint": "^10.0.3",
     "typescript": "^5.9.3"
   }
